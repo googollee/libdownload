@@ -2,7 +2,7 @@
 #define HTTP_PROTOCOL_IMPL_HEADER
 
 #include "HttpProtocol.h"
-#include "../../utility/File.h"
+#include <utility/File.h>
 
 #include <curl/curl.h>
 
@@ -18,18 +18,24 @@ struct HttpTaskInfo;
 struct HttpSessionInfo
 {
     CURL *handle;
-    slist *header;
     size_t writePos;
     size_t length;
     HttpTaskInfo *parent;
+
+    HttpSessionInfo()
+        : handle(NULL),
+          writePos(0),
+          length(0),
+          parent(NULL)
+        {}
 };
 
-typedef vector<HttpSessionInfo*> Sessions;
+typedef std::vector<HttpSessionInfo*> Sessions;
 
 struct HttpTaskInfo
 {
-    TaskInfo *info;
-    File file;
+    TaskInfo *taskInfo;
+    filesystem::File *file;
     time_t remoteTime;
     std::string mimeType;
     time_t lastRunTime;
@@ -37,32 +43,39 @@ struct HttpTaskInfo
     Sessions sessions;
 
     HttpTaskInfo()
-        : info(0),
-          file(0),
-          remoteTime(-1),
-          mimeType(0),
-          lastRunTime(-1)
+        : taskInfo(NULL),
+          file(NULL),
+          remoteTime(0),
+          lastRunTime(0)
         {}
 };
 
-typedef map<TaskID, HttpTaskInfo*> Tasks;
+typedef std::map<TaskId, HttpTaskInfo*> Tasks;
 
 struct HttpProtocolData
 {
     CURLM *handle;
     Tasks tasks;
     unsigned int defaultSessionNumber;
+    int running;
 
-    size_t sessionsPerTask;
     void delTask(const Tasks::iterator &it);
 
     void saveTask(const Tasks::iterator &it,
-                  std::ostream_iterator &out);
+                  std::ostream_iterator<char> &out);
     void loadTask(const Tasks::iterator &it,
-                  std::istream_iterator &begin,
-                  std::istream_iterator &end);
+                  std::istream_iterator<char> &begin,
+                  std::istream_iterator<char> &end);
 
-    TaskID getNewID();
+    TaskId getNewID();
+
+    void makeSession(HttpTaskInfo *info, size_t being, size_t len);
+
+    HttpProtocolData()
+        : handle(NULL),
+          defaultSessionNumber(DefaultSessionNumber),
+          running(-1)
+        {}
 };
 
 #endif

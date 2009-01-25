@@ -5,8 +5,10 @@
 
 #include <stdio.h>
 
-namespace FileWrapper
+namespace filesystem
 {
+
+//using namespace boost::filesystem;
 
 enum OpenFlag
 {
@@ -27,7 +29,7 @@ enum SeekFlag
 
 #include "FilePosixApi.h"
 
-namespace FileWrapper
+namespace filesystem
 {
 
 template <typename T>

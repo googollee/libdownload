@@ -20,7 +20,7 @@ check_PROGRAMS =
 TESTS += BitMap_unittest
 check_PROGRAMS += BitMap_unittest
 BitMap_unittest_SOURCES = utility/BitMap_unittest.cpp \
-                          ../src/utility/BitMap.cpp
+                          ../src/utility/BitMap.h ../src/utility/BitMap.cpp
 BitMap_unittest_CPPFLAGS = -I../src/
 BitMap_unittest_LDADD = gtest/lib/libgtest_main.la
 
@@ -29,3 +29,11 @@ check_PROGRAMS += File_unittest
 File_unittest_SOURCES = utility/File_unittest.cpp
 File_unittest_CPPFLAGS = -I../src/
 File_unittest_LDADD = gtest/lib/libgtest_main.la
+
+TESTS += HttpProtocol_unittest
+check_PROGRAMS += HttpProtocol_unittest
+HttpProtocol_unittest_SOURCES = protocol/HttpProtocol_unittest.cpp \
+                                ../src/protocols/http/HttpProtocol.h ../src/protocols/http/HttpProtocol.cpp \
+                                ../src/utility/BitMap.h ../src/utility/BitMap.cpp
+HttpProtocol_unittest_CPPFLAGS = -I../src/ ${LIBCURL_CPPFLAGS} ${BOOST_CPPFLAGS}
+HttpProtocol_unittest_LDADD = gtest/lib/libgtest_main.la ${LIBCURL_LIBS} ${BOOST_LDFLAGS} ${BOOST_SIGNALS_LIB}

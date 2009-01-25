@@ -2,17 +2,17 @@
 
 #include <gtest/gtest.h>
 
-using FileWrapper::File;
+namespace fs=filesystem;
 
 TEST(FileTest, Create)
 {
-    File f("./test.file", FileWrapper::Create | FileWrapper::Write);
+    fs::File f("./test.file", fs::Create | fs::Write);
     f.close();
 }
 
 TEST(FileTest, Resize)
 {
-    File f("./test.file", FileWrapper::Create | FileWrapper::Write);
+    fs::File f("./test.file", fs::Create | fs::Write);
     f.resize(10);
     f.close();
 }

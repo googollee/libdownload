@@ -14,6 +14,15 @@ AC_PROG_CC
 AC_PROG_LIBTOOL
 
 # Checks for libraries.
+#AX_BOOST_BASE
+#AX_BOOST_FILESYSTEM
+LIBCURL_CHECK_CONFIG([yes], [7.19.0])
+AC_SUBST(LIBCURL_CPPFLAGS)
+LIBCURL_LIBS=$LIBCURL
+AC_SUBST(LIBCURL_LIBS)
+
+AX_BOOST_BASE([1.36.0])
+AX_BOOST_SIGNALS()
 
 # Checks for header files.
 AC_CHECK_HEADERS([fcntl.h limits.h stddef.h stdlib.h string.h strings.h sys/time.h sys/timeb.h unistd.h wchar.h wctype.h])
@@ -36,6 +45,5 @@ AC_CHECK_FUNCS([dup2 getcwd getpagesize gettimeofday memset mkdir munmap regcomp
 
 AC_CONFIG_FILES([Makefile
                  unittest/Makefile
-                 unittest/gtest/Makefile
-                 unittest/utility/Makefile])
+                 unittest/gtest/Makefile])
 AC_OUTPUT

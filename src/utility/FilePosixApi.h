@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <string.h>
 
-namespace FileWrapper
+namespace filesystem
 {
 
 class FilePosixApi : private Noncopiable
@@ -70,11 +70,7 @@ inline bool FilePosixApi::isOpen()
 
 inline bool FilePosixApi::open(const char *name, int flag)
 {
-// #ifdef MINGW
-//     fd = ::open(name, convOpenFlagToNative(flag));
-// #else
     fd = ::open(name, convOpenFlagToNative(flag), 0666);
-// #endif
 
     return (fd != -1);
 }
