@@ -15,7 +15,7 @@ public:
     int         lineoff();
     const char* what();
     const char* component();
-    int         getErrno();
+    int         error();
 
 private:
     const char* file_;
@@ -57,7 +57,7 @@ inline const char* DownloadException::component()
     return component_;
 }
 
-inline int DownloadException::getErrno()
+inline int DownloadException::error()
 {
     return errno_;
 }
