@@ -34,10 +34,11 @@ public:
                           int *max_fd);
     virtual size_t perform(size_t *downloaded, size_t *uploaded);
 
+    virtual const char* strerror(int error);
+
 private:
     std::auto_ptr<HttpProtocolData> d;
 
-    void checkTasks();
 };
 
 #endif

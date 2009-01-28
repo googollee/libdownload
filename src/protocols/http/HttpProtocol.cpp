@@ -42,6 +42,24 @@ const char* strerror(HttpError error)
     return errorString[error];
 }
 
+static unsigned int downloadSize;
+
+size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSessionInfo *sinfo)
+{
+    size_t totalSize = size * nmemb;
+
+    sinfo->parent->file->seek(sinfo->writePos, filesystem::FromBegin);
+    size_t writed = sinfo->parent->file->write(buffer, totalSize);
+
+    sinfo->parent->taskInfo->bitMap.setRangeByLength(sinfo->writePos, writed, true);
+    sinfo->length -= writed;
+    sinfo->writePos += writed;
+
+    downloadSize += totalSize;
+
+    return writed;
+}
+
 inline void HttpProtocolData::delTask(const Tasks::iterator &taskIt)
 {
     assert(taskIt->second->taskInfo != NULL);
@@ -86,6 +104,14 @@ inline void HttpProtocolData::loadTask(const Tasks::iterator &taskIt,
     throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
 }
 
+
+void HttpProtocolData::checkTasks()
+{
+    printf("in check\n");
+    // check task status.
+//    throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
+}
+
 TaskId HttpProtocolData::getNewID()
 {
     typedef vector<TaskId> IDs;
@@ -119,22 +145,48 @@ TaskId HttpProtocolData::getNewID()
     return ret;
 }
 
-static unsigned int downloadSize;
-
-size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSessionInfo *sinfo)
+void HttpProtocolData::makeSession(HttpTaskInfo *info, size_t begin, size_t len)
 {
-    size_t totalSize = size * nmemb;
+#define CHECK_CURLE(ret)                                                \
+    {                                                                   \
+        if (rete != CURLE_OK)                                           \
+            throw DOWNLOADEXCEPTION(rete, "CURL", curl_easy_strerror(rete)); \
+    }
 
-    sinfo->parent->file->seek(sinfo->writePos, filesystem::FromBegin);
-    size_t writed = sinfo->parent->file->write(buffer, totalSize);
+    HttpSessionInfo *sinfo = new HttpSessionInfo;
+    sinfo->parent = info;
+    sinfo->writePos = begin;
+    size_t end = begin + len;
+    if (info->taskInfo->totalSize < end)
+        end = info->taskInfo->totalSize;
+    sinfo->length = end - begin;
 
-    sinfo->parent->taskInfo->bitMap.setRangeByLength(sinfo->writePos, writed, true);
-    sinfo->length -= writed;
-    sinfo->writePos += writed;
+    sinfo->handle = curl_easy_init();
+    if (sinfo->handle == NULL)
+        throw DOWNLOADEXCEPTION(CURL_BAD_ALLOC, "CURL", strerror(CURL_BAD_ALLOC));
 
-    downloadSize += totalSize;
+    CURLcode rete = curl_easy_setopt(sinfo->handle, CURLOPT_URL, info->taskInfo->url);
 
-    return writed;
+    rete = curl_easy_setopt(sinfo->handle, CURLOPT_WRITEFUNCTION, writeCallback);
+    CHECK_CURLE(rete);
+
+    rete = curl_easy_setopt(sinfo->handle, CURLOPT_WRITEDATA, sinfo);
+    CHECK_CURLE(rete);
+
+    char range[128] = {0};
+    sprintf(range, "%u-%u", begin, end - 1);
+    rete = curl_easy_setopt(sinfo->handle, CURLOPT_RANGE, range);
+    CHECK_CURLE(rete);
+
+    CURLMcode retm = curl_multi_add_handle(this->handle, sinfo->handle);
+    if (retm != CURLM_OK)
+    {
+        throw DOWNLOADEXCEPTION(retm, "CURL", curl_multi_strerror(retm));
+    }
+
+    info->sessions.push_back(sinfo);
+
+#undef CHECK_CURLE
 }
 
 HttpProtocol::HttpProtocol()
@@ -300,50 +352,6 @@ void initTaskInfo(HttpTaskInfo *info)
 #undef CHECK_CURLE
 }
 
-void HttpProtocolData::makeSession(HttpTaskInfo *info, size_t begin, size_t len)
-{
-#define CHECK_CURLE(ret)                                                \
-    {                                                                   \
-        if (rete != CURLE_OK)                                           \
-            throw DOWNLOADEXCEPTION(rete, "CURL", curl_easy_strerror(rete)); \
-    }
-
-    HttpSessionInfo *sinfo = new HttpSessionInfo;
-    sinfo->parent = info;
-    sinfo->writePos = begin;
-    size_t end = begin + len;
-    if (info->taskInfo->totalSize < end)
-        end = info->taskInfo->totalSize;
-    sinfo->length = end - begin;
-
-    sinfo->handle = curl_easy_init();
-    if (sinfo->handle == NULL)
-        throw DOWNLOADEXCEPTION(CURL_BAD_ALLOC, "CURL", strerror(CURL_BAD_ALLOC));
-
-    CURLcode rete = curl_easy_setopt(sinfo->handle, CURLOPT_URL, info->taskInfo->url);
-
-    rete = curl_easy_setopt(sinfo->handle, CURLOPT_WRITEFUNCTION, writeCallback);
-    CHECK_CURLE(rete);
-
-    rete = curl_easy_setopt(sinfo->handle, CURLOPT_WRITEDATA, sinfo);
-    CHECK_CURLE(rete);
-
-    char range[128] = {0};
-    sprintf(range, "%u-%u", begin, end - 1);
-    rete = curl_easy_setopt(sinfo->handle, CURLOPT_RANGE, range);
-    CHECK_CURLE(rete);
-
-    CURLMcode retm = curl_multi_add_handle(this->handle, sinfo->handle);
-    if (retm != CURLM_OK)
-    {
-        throw DOWNLOADEXCEPTION(retm, "CURL", curl_multi_strerror(retm));
-    }
-
-    info->sessions.push_back(sinfo);
-
-#undef CHECK_CURLE
-}
-
 void HttpProtocol::addTask(const TaskId id, TaskInfo *info)
 {
     if (info == NULL)
@@ -473,7 +481,7 @@ size_t HttpProtocol::perform(size_t *downloaded, size_t *uploaded)
 
     if ( (d->running > 0) && (running < d->running) )
     {
-        checkTasks();
+        d->checkTasks();
     }
     d->running = running;
 
@@ -483,9 +491,7 @@ size_t HttpProtocol::perform(size_t *downloaded, size_t *uploaded)
     return running;
 }
 
-void HttpProtocol::checkTasks()
+const char* HttpProtocol::strerror(int error)
 {
-    printf("in check\n");
-    // check task status.
-//    throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
+    return "";
 }

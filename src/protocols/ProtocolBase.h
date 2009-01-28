@@ -10,8 +10,26 @@
 class ProtocolBase
 {
 public:
-    typedef void ErrorCallback(TaskId id, int errno);
-    typedef void FinishedCallback(TaskId id, int errno);
+    // when task meet error, call for noticing manager.
+    typedef void ErrorCallback(TaskId id, int error);
+
+    // when task download finish, call for noticing manager.
+    typedef void DownloadFinishCallback(TaskId id);
+
+    // when task Upload finish, call for noticing manager.
+    typedef void UploadFinishCallback(TaskId id);
+
+    // log informations for task. For example: connect, redirect, or fail information. No need sufix with '\n'.
+    typedef void LogTaskInfoCallback(TaskId id, const char *log);
+
+    // log informations for protocol plugin. For example: init, read configure, or fail information. No need sufix with '\n'.
+    typedef void LogProtocolInfoCallback(const char *log);
+
+    boost::signal<ErrorCallback> errorSignal;
+    boost::signal<DownloadFinishCallback> downloadFinishSignal;
+    boost::signal<UploadFinishCallback> uploadFinishSignal;
+    boost::signal<LogTaskInfoCallback> logTaskInfo;
+    boost::signal<LogProtocolInfoCallback> logProtocolInfo;
 
     ProtocolBase();
     virtual ~ProtocolBase();
@@ -60,8 +78,8 @@ public:
     // downloaded and uploaded speed unit is byte.
     virtual size_t perform(size_t *downloaded, size_t *uploaded) = 0;
 
-    boost::signal<ErrorCallback> errorSignal;
-    boost::signal<FinishedCallback> finishSignal;
+    // return the string of error
+    virtual const char *strerror(int error) = 0;
 
 private:
     ProtocolBase(const ProtocolBase &);

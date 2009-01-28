@@ -66,6 +66,7 @@ struct HttpProtocolData
     void loadTask(const Tasks::iterator &it,
                   std::istream_iterator<char> &begin,
                   std::istream_iterator<char> &end);
+    void checkTasks();
 
     TaskId getNewID();
 
