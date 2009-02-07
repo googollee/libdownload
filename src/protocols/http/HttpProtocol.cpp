@@ -9,6 +9,12 @@
 #include <string>
 #include <algorithm>
 
+#define CHECK_CURLE(rete)                                               \
+    {                                                                   \
+        if (rete != CURLE_OK)                                           \
+            throw DOWNLOADEXCEPTION(rete, "CURL", curl_easy_strerror(rete)); \
+    }
+
 using std::vector;
 using std::map;
 using std::string;
@@ -60,6 +66,24 @@ size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSessionInfo *s
     return writed;
 }
 
+inline void HttpProtocolData::eraseSession(HttpSessionInfo *sinfo)
+{
+    if (sinfo->handle != NULL)
+    {
+        CURLMcode retm = curl_multi_remove_handle(handle, sinfo->handle);
+        if (retm != CURLM_OK)
+            throw DOWNLOADEXCEPTION(retm, "CURLM", curl_multi_strerror(retm));
+
+        curl_easy_cleanup(sinfo->handle);
+    }
+
+    sinfo->handle = NULL;
+    sinfo->writePos = 0;
+    sinfo->length = 0;
+    sinfo->parent = NULL;
+    delete sinfo;
+ }
+
 inline void HttpProtocolData::delTask(const Tasks::iterator &taskIt)
 {
     assert(taskIt->second->taskInfo != NULL);
@@ -67,20 +91,7 @@ inline void HttpProtocolData::delTask(const Tasks::iterator &taskIt)
          it != taskIt->second->sessions.end();
          ++it)
     {
-        if ((*it)->handle != NULL)
-        {
-            CURLMcode retm = curl_multi_remove_handle(handle, (*it)->handle);
-            if (retm != CURLM_OK)
-                throw DOWNLOADEXCEPTION(retm, "CURLM", curl_multi_strerror(retm));
-
-            curl_easy_cleanup((*it)->handle);
-        }
-
-//         it->handle = NULL;
-//         writePos = 0;
-//         length = 0;
-//         parent = NULL;
-        delete *it;
+        eraseSession(*it);
     }
 
     if (taskIt->second->file != NULL)
@@ -104,12 +115,89 @@ inline void HttpProtocolData::loadTask(const Tasks::iterator &taskIt,
     throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
 }
 
+bool findNonDownload(HttpTaskInfo *info, size_t *begin, size_t *len)
+{
+    vector<size_t> downloadBegins;
+    for (Sessions::iterator it = info->sessions.begin();
+         it != info->sessions.end();
+         ++it)
+    {
+        printf("%d ", (*it)->writePos / info->taskInfo->bitMap.bytesPerBit());
+        downloadBegins.push_back((*it)->writePos / info->taskInfo->bitMap.bytesPerBit());
+    }
+    printf("\n");
+
+    size_t b = info->taskInfo->bitMap.find(false, 0);
+    while (b < info->taskInfo->bitMap.size())
+    {
+        size_t e = info->taskInfo->bitMap.find(true, b);
+        if (find(downloadBegins.begin(), downloadBegins.end(), b) == downloadBegins.end())
+        {
+            // finded
+            *begin = b * info->taskInfo->bitMap.bytesPerBit();
+            *len = (e - b) * info->taskInfo->bitMap.bytesPerBit();
+
+            printf("find b = %d, e = %d\n", b, e);
+            return true;
+        }
+        b = info->taskInfo->bitMap.find(false, e);
+    }
+
+    return false;
+}
 
 void HttpProtocolData::checkTasks()
 {
-    printf("in check\n");
     // check task status.
-//    throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
+    printf("in check\n");
+    CURLMsg *msg = NULL;
+    int msgsInQueue;
+    while ( (msg = curl_multi_info_read(handle, &msgsInQueue)) != NULL)
+    {
+        HttpSessionInfo *sinfo = NULL;
+        CURLcode rete = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &sinfo);
+        CHECK_CURLE(rete);
+        printf("%p finished\n", sinfo);
+
+        HttpTaskInfo *hinfo = sinfo->parent;
+
+        long respCode = 0;
+        rete = curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &respCode);
+        CHECK_CURLE(rete);
+        int topRespCode = respCode / 100;
+        printf("top response code = %d\n", topRespCode);
+
+        switch (msg->msg)
+        {
+        case CURLMSG_DONE:
+            switch (topRespCode)
+            {
+            case 2: // succeed download
+                sinfo->parent->sessions.erase(
+                    std::find(sinfo->parent->sessions.begin(),
+                              sinfo->parent->sessions.end(),
+                              sinfo)
+                    );
+                eraseSession(sinfo);
+                {
+                    size_t begin;
+                    size_t len;
+                    if (findNonDownload(hinfo, &begin, &len))
+                    {
+                        makeSession(hinfo, begin, len);
+                    }
+                }
+                if (hinfo->sessions.size() == 0)
+                {
+                    printf("task %s download finish\n", hinfo->taskInfo->url);
+                }
+                break;
+            }
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 TaskId HttpProtocolData::getNewID()
@@ -147,12 +235,6 @@ TaskId HttpProtocolData::getNewID()
 
 void HttpProtocolData::makeSession(HttpTaskInfo *info, size_t begin, size_t len)
 {
-#define CHECK_CURLE(ret)                                                \
-    {                                                                   \
-        if (rete != CURLE_OK)                                           \
-            throw DOWNLOADEXCEPTION(rete, "CURL", curl_easy_strerror(rete)); \
-    }
-
     HttpSessionInfo *sinfo = new HttpSessionInfo;
     sinfo->parent = info;
     sinfo->writePos = begin;
@@ -173,6 +255,9 @@ void HttpProtocolData::makeSession(HttpTaskInfo *info, size_t begin, size_t len)
     rete = curl_easy_setopt(sinfo->handle, CURLOPT_WRITEDATA, sinfo);
     CHECK_CURLE(rete);
 
+    rete = curl_easy_setopt(sinfo->handle, CURLOPT_PRIVATE, sinfo);
+    CHECK_CURLE(rete);
+
     char range[128] = {0};
     sprintf(range, "%u-%u", begin, end - 1);
     rete = curl_easy_setopt(sinfo->handle, CURLOPT_RANGE, range);
@@ -185,8 +270,6 @@ void HttpProtocolData::makeSession(HttpTaskInfo *info, size_t begin, size_t len)
     }
 
     info->sessions.push_back(sinfo);
-
-#undef CHECK_CURLE
 }
 
 HttpProtocol::HttpProtocol()
@@ -296,12 +379,6 @@ void getFileName(CURL *handle, HttpTaskInfo *httpInfo)
 
 void initTaskInfo(HttpTaskInfo *info)
 {
-#define CHECK_CURLE(ret)                                                \
-    {                                                                   \
-        if (rete != CURLE_OK)                                           \
-            throw DOWNLOADEXCEPTION(rete, "CURL", curl_easy_strerror(rete)); \
-    }
-
     CURL *handle = curl_easy_init();
     if (handle == NULL)
         throw DOWNLOADEXCEPTION(CURL_BAD_ALLOC, "CURL", strerror(CURL_BAD_ALLOC));
@@ -348,8 +425,6 @@ void initTaskInfo(HttpTaskInfo *info)
     info->file->resize(info->taskInfo->totalSize);
 
     curl_easy_cleanup(handle);
-
-#undef CHECK_CURLE
 }
 
 void HttpProtocol::addTask(const TaskId id, TaskInfo *info)

@@ -59,8 +59,8 @@ struct HttpProtocolData
     unsigned int defaultSessionNumber;
     int running;
 
+    void eraseSession(HttpSessionInfo *info);
     void delTask(const Tasks::iterator &it);
-
     void saveTask(const Tasks::iterator &it,
                   std::ostream_iterator<char> &out);
     void loadTask(const Tasks::iterator &it,
