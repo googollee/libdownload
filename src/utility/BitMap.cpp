@@ -12,11 +12,13 @@
  */
 BitMap::BitMap() :
     map_(0),
+    len_(0),
     bytesPerBit_(0)
 {}
 
 BitMap::BitMap(size_t len, size_t bytesPerBit)
     : map_( (len + bytesPerBit - 1) / bytesPerBit, false ),
+      len_(len),
       bytesPerBit_(bytesPerBit)
 {}
 
@@ -25,6 +27,7 @@ BitMap::~BitMap()
 
 BitMap::BitMap(const BitMap &arg)
     : map_(arg.map_),
+      len_(arg.len_),
       bytesPerBit_(arg.bytesPerBit_)
 {}
 
@@ -44,6 +47,7 @@ void BitMap::swap(BitMap &arg)
     using std::swap;
 
     swap(map_, arg.map_);
+    swap(len_, arg.len_);
     swap(bytesPerBit_, arg.bytesPerBit_);
 }
 
@@ -97,6 +101,12 @@ void BitMap::setRange(BitMap::size_type begin, BitMap::size_type end, BitMap::va
     {
         map_.at(i) = v;
     }
+
+    if (end > map_.size())
+    {
+        printf("set the last one\n");
+        map_.at(map_.size() - 1) = v;
+    }
 }
 
 BitMap::size_type BitMap::getPositionByLength(size_t len)
@@ -106,5 +116,9 @@ BitMap::size_type BitMap::getPositionByLength(size_t len)
 
 void BitMap::setRangeByLength(BitMap::size_type begin, BitMap::size_type end, BitMap::value_type v)
 {
-    setRange(begin/bytesPerBit_, end/bytesPerBit_, v);
+    if (end >= len_)
+    {
+        end += bytesPerBit_;
+    }
+    setRange(begin / bytesPerBit_, end / bytesPerBit_, v);
 }

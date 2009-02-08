@@ -55,6 +55,7 @@ public:
 
 private:
     std::vector<bool> map_;
+    size_t len_;
     size_t bytesPerBit_;
 };
 

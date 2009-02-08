@@ -1,3 +1,4 @@
+
 #include "HttpProtocol.h"
 #include "HttpProtocolImpl.h"
 
@@ -57,7 +58,7 @@ size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSessionInfo *s
     sinfo->parent->file->seek(sinfo->writePos, filesystem::FromBegin);
     size_t writed = sinfo->parent->file->write(buffer, totalSize);
 
-    sinfo->parent->taskInfo->bitMap.setRangeByLength(sinfo->writePos, writed, true);
+    sinfo->parent->taskInfo->bitMap.setRangeByLength(sinfo->writePos, sinfo->writePos + writed, true);
     sinfo->length -= writed;
     sinfo->writePos += writed;
 
@@ -122,10 +123,8 @@ bool findNonDownload(HttpTaskInfo *info, size_t *begin, size_t *len)
          it != info->sessions.end();
          ++it)
     {
-        printf("%d ", (*it)->writePos / info->taskInfo->bitMap.bytesPerBit());
         downloadBegins.push_back((*it)->writePos / info->taskInfo->bitMap.bytesPerBit());
     }
-    printf("\n");
 
     size_t b = info->taskInfo->bitMap.find(false, 0);
     while (b < info->taskInfo->bitMap.size())
@@ -137,7 +136,6 @@ bool findNonDownload(HttpTaskInfo *info, size_t *begin, size_t *len)
             *begin = b * info->taskInfo->bitMap.bytesPerBit();
             *len = (e - b) * info->taskInfo->bitMap.bytesPerBit();
 
-            printf("find b = %d, e = %d\n", b, e);
             return true;
         }
         b = info->taskInfo->bitMap.find(false, e);
@@ -149,7 +147,6 @@ bool findNonDownload(HttpTaskInfo *info, size_t *begin, size_t *len)
 void HttpProtocolData::checkTasks()
 {
     // check task status.
-    printf("in check\n");
     CURLMsg *msg = NULL;
     int msgsInQueue;
     while ( (msg = curl_multi_info_read(handle, &msgsInQueue)) != NULL)
@@ -157,7 +154,6 @@ void HttpProtocolData::checkTasks()
         HttpSessionInfo *sinfo = NULL;
         CURLcode rete = curl_easy_getinfo(msg->easy_handle, CURLINFO_PRIVATE, &sinfo);
         CHECK_CURLE(rete);
-        printf("%p finished\n", sinfo);
 
         HttpTaskInfo *hinfo = sinfo->parent;
 
