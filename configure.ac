@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.63])
+AC_PREREQ([2.6])
 AC_INIT([libdownload unit test], [0.0.1], [googollee@gmail.com])
 AC_CONFIG_SRCDIR([./COPYING])
 AC_CONFIG_HEADERS([config.h])

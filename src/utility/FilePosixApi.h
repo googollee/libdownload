@@ -70,7 +70,11 @@ inline bool FilePosixApi::isOpen()
 
 inline bool FilePosixApi::open(const char *name, int flag)
 {
-    fd = ::open(name, convOpenFlagToNative(flag) | O_BINARY, 0666);
+#ifdef __MINGW32__
+    fd = ::open(name, convOpenFlagToNative(flag) | O_BINARY , 0666);
+#else
+    fd = ::open(name, convOpenFlagToNative(flag), 0666);
+#endif
 
     return (fd != -1);
 }

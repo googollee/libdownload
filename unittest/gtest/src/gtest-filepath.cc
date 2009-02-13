@@ -274,7 +274,11 @@ bool FilePath::CreateFolder() const {
   int result = _mkdir(pathname_.c_str());
 #endif  // !WIN32_WCE
 #else
+#ifdef __MINGW32__
   int result = mkdir(pathname_.c_str());
+#else
+  int result = mkdir(pathname_.c_str(), 0666);
+#endif  // __MINGW32__
 #endif  // _WIN32
   if (result == -1) {
     return this->DirectoryExists();  // An error is OK if the directory exists.
