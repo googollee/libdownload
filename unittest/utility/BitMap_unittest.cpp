@@ -6,16 +6,16 @@ TEST(BitMapTest, TestZero)
 {
     BitMap map;
 
-    EXPECT_EQ(map.size(), size_t(0));
-    EXPECT_EQ(map.bytesPerBit(), (unsigned int)0);
+    EXPECT_EQ(map.size(), 0u);
+    EXPECT_EQ(map.bytesPerBit(), 0u);
 }
 
 TEST(BitMapTest, Test3000Size1Byte_ctor)
 {
     BitMap map(3000, 1);
 
-    EXPECT_EQ(map.size(), size_t(3000));
-    EXPECT_EQ(map.bytesPerBit(), (unsigned int)1);
+    EXPECT_EQ(map.size(), 3000u);
+    EXPECT_EQ(map.bytesPerBit(), 1u);
 
     for (size_t i=0; i<map.size(); ++i)
     {
@@ -36,8 +36,8 @@ TEST(BitMapTest, Test3000Size1Byte_set)
             EXPECT_EQ(map.get(i), true);
     }
 
-    EXPECT_EQ(map.find(true), 12);
-    EXPECT_EQ(map.find(true, 10), 12);
+    EXPECT_EQ(map.find(true), 12u);
+    EXPECT_EQ(map.find(true, 10), 12u);
 }
 
 TEST(BitMapTest, Test3000Size1Byte_setAll)
@@ -82,9 +82,9 @@ TEST(BitMapTest, Test3000Size1Byte_getPositionByLength)
     BitMap map(3000, 1);
 
     map.setAll(false);
-    EXPECT_EQ(map.getPositionByLength(0), 0);
-    EXPECT_EQ(map.getPositionByLength(1), 1);
-    EXPECT_EQ(map.getPositionByLength(2999), 2999);
+    EXPECT_EQ(map.getPositionByLength(0), 0u);
+    EXPECT_EQ(map.getPositionByLength(1), 1u);
+    EXPECT_EQ(map.getPositionByLength(2999), 2999u);
 }
 
 TEST(BitMapTest, Test3000Size1Byte_setRangeByLength)
@@ -118,8 +118,8 @@ TEST(BitMapTest, Test300Size10Byte_ctor)
 {
     BitMap map(300 * 10, 10);
 
-    EXPECT_EQ(map.size(), 300);
-    EXPECT_EQ(map.bytesPerBit(), 10);
+    EXPECT_EQ(map.size(), 300u);
+    EXPECT_EQ(map.bytesPerBit(), 10u);
 
     for (size_t i=0; i<map.size(); ++i)
     {
@@ -140,8 +140,8 @@ TEST(BitMapTest, Test300Size10Byte_set)
             EXPECT_EQ(map.get(i), true);
     }
 
-    EXPECT_EQ(map.find(true), 12);
-    EXPECT_EQ(map.find(true, 10), 12);
+    EXPECT_EQ(map.find(true), 12u);
+    EXPECT_EQ(map.find(true, 10), 12u);
 }
 
 TEST(BitMapTest, Test300Size1Byte_setAll)
@@ -225,10 +225,24 @@ TEST(BitMapTest, Test300Size10Byte_getPositionByLength)
     BitMap map(300 * 10, 10);
 
     map.setAll(false);
-    EXPECT_EQ(map.getPositionByLength(0), 0);
-    EXPECT_EQ(map.getPositionByLength(1), 0);
-    EXPECT_EQ(map.getPositionByLength(9), 0);
-    EXPECT_EQ(map.getPositionByLength(10), 1);
-    EXPECT_EQ(map.getPositionByLength(11), 1);
-    EXPECT_EQ(map.getPositionByLength(2999), 299);
+    EXPECT_EQ(map.getPositionByLength(0), 0u);
+    EXPECT_EQ(map.getPositionByLength(1), 0u);
+    EXPECT_EQ(map.getPositionByLength(9), 0u);
+    EXPECT_EQ(map.getPositionByLength(10), 1u);
+    EXPECT_EQ(map.getPositionByLength(11), 1u);
+    EXPECT_EQ(map.getPositionByLength(2999), 299u);
+}
+
+TEST(BitMapTest, TestSetLastBitByRange)
+{
+    BitMap map(3000, 13);
+
+    map.setAll(false);
+    EXPECT_EQ(map.size(), 231u);
+
+    map.setRangeByLength(0, 3000, true);
+    for (size_t i=0; i<map.size(); ++i)
+    {
+        EXPECT_EQ(map.get(i), true);
+    }
 }

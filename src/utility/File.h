@@ -105,7 +105,7 @@ inline void File::FileBase<T>::resize(size_t len)
 template <typename T>
 inline size_t File::FileBase<T>::read(void *buffer, size_t max)
 {
-    size_t ret;
+    size_t ret = 0;
     if ( !data.read(buffer, max, &ret) )
     {
         int err = T::getLastError();
@@ -117,7 +117,7 @@ inline size_t File::FileBase<T>::read(void *buffer, size_t max)
 template <typename T>
 inline size_t File::FileBase<T>::write(const void *buffer, size_t len)
 {
-    size_t ret;
+    size_t ret = 0;
     if ( !data.write(buffer, len, &ret) )
     {
         int err = T::getLastError();

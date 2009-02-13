@@ -1,3 +1,29 @@
+/**
+ * HttpProtocol Structure Map:
+ *
+ *                    +------------+           +--------+
+ *                    |HttpTaskInfo|<>---------|TaskInfo|
+ *                    +------------+           +--------+
+ *             +------|int fd      |
+ *             |      +------------+
+ *             |           <>
+ *             |            | 1..n
+ *             |            |
+ *             |            |
+ *             |    +----------------+
+ *             |    |    Session     |
+ *             |    +----------------+
+ *             |    |size_t writePos |---+
+ *             |    |size_t length   |   |
+ *             |    +----------------+   |
+ *             |           <>            |
+ *             |            | 1          |
+ *             |            |            |
+ *             |            |            |
+ *             |    +----------------+   |
+ *             +--<>|curl_easy_handle|<>-+ WRITEFUNCTION_DATA
+ *   PRIVATE_DATA   +----------------+
+ */
 
 #include "HttpProtocol.h"
 #include "HttpProtocolImpl.h"
@@ -255,7 +281,7 @@ void HttpProtocolData::makeSession(HttpTaskInfo *info, size_t begin, size_t len)
     CHECK_CURLE(rete);
 
     char range[128] = {0};
-    sprintf(range, "%u-%u", begin, end - 1);
+    sprintf(range, "%lu-%lu", begin, end - 1);
     rete = curl_easy_setopt(sinfo->handle, CURLOPT_RANGE, range);
     CHECK_CURLE(rete);
 
