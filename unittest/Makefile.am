@@ -1,9 +1,9 @@
 # Automake file
 AUTOMAKE_OPTIONS = foreign
 
-AM_CFLAGS = -g -O0 -Wall -Igtest/$(srcdir) -Igtest/$(srcdir)/include
-AM_CPPFLAGS = -g -O0 -Wall -Igtest/$(srcdir) -Igtest/$(srcdir)/include
-AM_CXXFLAGS = -g -O0 -Wall -Igtest/$(srcdir) -Igtest/$(srcdir)/include
+AM_CFLAGS = -g -O0 -Wall -D_DEBUG -Igtest/$(srcdir) -Igtest/$(srcdir)/include
+AM_CPPFLAGS = -g -O0 -Wall -D_DEBUG -Igtest/$(srcdir) -Igtest/$(srcdir)/include
+AM_CXXFLAGS = -g -O0 -Wall -D_DEBUG -Igtest/$(srcdir) -Igtest/$(srcdir)/include
 
 SUBDIRS = gtest
 

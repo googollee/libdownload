@@ -7,29 +7,60 @@
 
 #include <iterator>
 
+#if defined(WIN32) && !defined(_WIN32_WCE) && !defined(__GNUC__) && \
+  !defined(__CYGWIN__) || defined(__MINGW32__)
+
+#if !(defined(_WINSOCKAPI_) || defined(_WINSOCK_H))
+/* The check above prevents the winsock2 inclusion if winsock.h already was
+   included, since they can't co-exist without problems */
+#include <winsock2.h>
+#endif // !(defined(_WINSOCKAPI_) || defined(_WINSOCK_H))
+
+#else
+
+/* HP-UX systems version 9, 10 and 11 lack sys/select.h and so does oldish
+   libc5-based Linux systems. Only include it on system that are known to
+   require it! */
+#if defined(_AIX) || defined(__NOVELL_LIBC__) || defined(__NetBSD__) || \
+    defined(__minix) || defined(__SYMBIAN32__) || defined(__INTEGRITY)
+#include <sys/select.h>
+#endif // defined(_AIX) || defined(__NOVELL_LIBC__) ..  defined(__INTEGRITY)
+
+#ifndef _WIN32_WCE
+#include <sys/socket.h>
+#endif // !_WIN32_WCE
+
+#if !defined(WIN32) && !defined(__WATCOMC__)
+#include <sys/time.h>
+#endif // !defined(WIN32) && !defined(__WATCOMC__)
+
+#include <sys/types.h>
+
+#endif // defined(WIN32) && !defined(_WIN32_WCE) && .. || defined(__MINGW32__)
+
 class ProtocolBase
 {
 public:
-    // when task meet error, call for noticing manager.
-    typedef void ErrorCallback(TaskId id, int error);
-
     // when task download finish, call for noticing manager.
-    typedef void DownloadFinishCallback(TaskId id);
+    typedef void DownloadFinishCallback(TaskInfo *info);
 
     // when task Upload finish, call for noticing manager.
-    typedef void UploadFinishCallback(TaskId id);
+    typedef void UploadFinishCallback(TaskInfo *info);
 
     // log informations for task. For example: connect, redirect, or fail information. No need sufix with '\n'.
-    typedef void LogTaskInfoCallback(TaskId id, const char *log);
+    typedef void TaskLogCallback(TaskInfo *info, const char *log);
+
+    // when task meet error, call for noticing manager.
+    typedef void TaskErrorCallback(TaskInfo *info, int error);
 
     // log informations for protocol plugin. For example: init, read configure, or fail information. No need sufix with '\n'.
-    typedef void LogProtocolInfoCallback(const char *log);
+    typedef void ProtocolLogCallback(ProtocolBase *p, const char *log);
 
-    boost::signal<ErrorCallback> errorSignal;
-    boost::signal<DownloadFinishCallback> downloadFinishSignal;
-    boost::signal<UploadFinishCallback> uploadFinishSignal;
-    boost::signal<LogTaskInfoCallback> logTaskInfo;
-    boost::signal<LogProtocolInfoCallback> logProtocolInfo;
+    boost::signal<DownloadFinishCallback> downloadFinish;
+    boost::signal<UploadFinishCallback> uploadFinish;
+    boost::signal<TaskErrorCallback> taskError;
+    boost::signal<TaskLogCallback> taskLog;
+    boost::signal<ProtocolLogCallback> protocolLog;
 
     ProtocolBase();
     virtual ~ProtocolBase();
@@ -57,14 +88,14 @@ public:
     // Task control
     // this options is session related
     // info is controled by manager, can modify in protocol
-    virtual void addTask(const TaskId id, TaskInfo *info) = 0;
-    virtual void delTask(const TaskId id) = 0;
+    virtual void addTask(TaskInfo *info) = 0;
+    virtual void removeTask(const TaskId id) = 0;
     virtual bool hasTask(const TaskId id) = 0;
 
     // Save and load
     virtual void saveTask(const TaskId id,
                           std::ostream_iterator<char> &out) = 0;
-    virtual void loadTask(const TaskId id,
+    virtual void loadTask(TaskInfo *info,
                           std::istream_iterator<char> &begin,
                           std::istream_iterator<char> &end) = 0;
 
@@ -76,7 +107,7 @@ public:
 
     // return the downloading items number
     // downloaded and uploaded speed unit is byte.
-    virtual size_t perform(size_t *downloaded, size_t *uploaded) = 0;
+    virtual size_t perform() = 0;
 
     // return the string of error
     virtual const char *strerror(int error) = 0;

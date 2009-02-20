@@ -2,7 +2,7 @@
 #define HTTP_PROTOCOL_IMPL_HEADER
 
 #include "HttpProtocol.h"
-#include <utility/File.h>
+#include "utility/File.h"
 
 #include <curl/curl.h>
 
@@ -10,72 +10,97 @@
 #include <vector>
 #include <string>
 
-const unsigned int DefaultSessionNumber = 5;
-const size_t DefaultBytePerBlock = 512;
+static int DefaultSessionNumber = 5;
+static int DefaultMinSessionBlocks = 200;
+static int DefaultBytesPerBlock = 512;
 
-struct HttpTaskInfo;
+struct HttpProtocolData;
+struct HttpTask;
+struct HttpSession;
 
-struct HttpSessionInfo
+typedef std::map<TaskId, HttpTask*> Tasks;
+typedef std::vector<HttpSession*> Sessions;
+
+struct HttpConfigure
 {
-    CURL *handle;
-    size_t writePos;
-    size_t length;
-    HttpTaskInfo *parent;
+    int sessionNumber;
+    int minSessionBlocks;
+    int bytesPerBlock;
 
-    HttpSessionInfo()
-        : handle(NULL),
-          writePos(0),
-          length(0),
-          parent(NULL)
+    HttpConfigure()
+        : sessionNumber(DefaultSessionNumber),
+          minSessionBlocks(DefaultMinSessionBlocks),
+          bytesPerBlock(DefaultBytesPerBlock)
         {}
 };
 
-typedef std::vector<HttpSessionInfo*> Sessions;
-
-struct HttpTaskInfo
+enum HttpTaskState
 {
-    TaskInfo *taskInfo;
-    filesystem::File *file;
-    time_t remoteTime;
-    std::string mimeType;
-    time_t lastRunTime;
+    HT_INVALID,
+    HT_PREPARE,
+    HT_DOWNLOAD,
+    HT_FINISH,
+};
+
+struct HttpSession
+{
+    CURL *handle;
+    size_t pos;
+    size_t length;
+    HttpTask &t;
+
+    HttpSession(HttpTask &task)
+        : handle(NULL),
+          pos(0),
+          length(0),
+          t(task)
+        {}
+};
+
+struct HttpTask
+{
+    TaskInfo *info;
+    filesystem::File file;
+    HttpConfigure conf;
+    HttpTaskState state;
+    HttpProtocolData &d;
 
     Sessions sessions;
 
-    HttpTaskInfo()
-        : taskInfo(NULL),
-          file(NULL),
-          remoteTime(0),
-          lastRunTime(0)
+    HttpTask(HttpProtocolData &data)
+        : info(NULL),
+          state(HT_INVALID),
+          d(data)
         {}
 };
 
-typedef std::map<TaskId, HttpTaskInfo*> Tasks;
-
 struct HttpProtocolData
 {
+    HttpProtocol *p;
+
     CURLM *handle;
     Tasks tasks;
-    unsigned int defaultSessionNumber;
     int running;
+    Sessions finishSessions;
 
-    void eraseSession(HttpSessionInfo *info);
-    void delTask(const Tasks::iterator &it);
+    void initTask(HttpTask *task);
+    void removeTask(const Tasks::iterator &it);
     void saveTask(const Tasks::iterator &it,
                   std::ostream_iterator<char> &out);
-    void loadTask(const Tasks::iterator &it,
+    void loadTask(HttpTask *task,
                   std::istream_iterator<char> &begin,
                   std::istream_iterator<char> &end);
+    void checkTask(HttpTask *task);
+    void checkSession(HttpSession *session);
     void checkTasks();
 
-    TaskId getNewID();
-
-    void makeSession(HttpTaskInfo *info, size_t being, size_t len);
+    void makeSession(HttpTask *task, size_t pos, size_t len);
+    void removeSession(HttpSession *session);
 
     HttpProtocolData()
-        : handle(NULL),
-          defaultSessionNumber(DefaultSessionNumber),
-          running(-1)
+        : p(NULL),
+          handle(NULL),
+          running(0)
         {}
 };
 

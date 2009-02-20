@@ -18,13 +18,13 @@ public:
     virtual void setOptions(const char *opts);
     virtual const char* getAllOptions();
 
-    virtual void addTask(const TaskId id, TaskInfo *info);
-    virtual void delTask(const TaskId id);
+    virtual void addTask(TaskInfo *info);
+    virtual void removeTask(const TaskId id);
     virtual bool hasTask(const TaskId id);
 
     virtual void saveTask(const TaskId id,
                           std::ostream_iterator<char> &out);
-    virtual void loadTask(const TaskId id,
+    virtual void loadTask(TaskInfo *info,
                           std::istream_iterator<char> &begin,
                           std::istream_iterator<char> &end);
 
@@ -32,7 +32,7 @@ public:
                           fd_set *write_fd_set,
                           fd_set *exc_fd_set,
                           int *max_fd);
-    virtual size_t perform(size_t *downloaded, size_t *uploaded);
+    virtual size_t perform();
 
     virtual const char* strerror(int error);
 

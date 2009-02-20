@@ -36,10 +36,11 @@ template <typename T>
 class FileBase : private Noncopiable
 {
 public:
-
+    FileBase();
     FileBase(const char *name, int flag);
     ~FileBase();
 
+    void open(const char *name, int flag);
     bool isOpen();
     void close();
     void resize(size_t len);
@@ -58,6 +59,10 @@ private:
 typedef FileBase<FilePosixApi> File;
 
 template <typename T>
+inline File::FileBase<T>::FileBase()
+{}
+
+template <typename T>
 inline File::FileBase<T>::FileBase(const char *name, int flag)
 {
     if ( !data.open(name, flag) )
@@ -73,6 +78,16 @@ inline File::FileBase<T>::~FileBase()
     if (isOpen())
     {
         close();
+    }
+}
+
+template <typename T>
+inline void File::FileBase<T>::open(const char *name, int flag)
+{
+    if ( !data.open(name, flag) )
+    {
+        int err = T::getLastError();
+        DOWNLOADEXCEPTION(err, "File", T::strError(err));
     }
 }
 

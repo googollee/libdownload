@@ -16,6 +16,8 @@ namespace filesystem
 class FilePosixApi : private Noncopiable
 {
 public:
+    FilePosixApi();
+
     bool open(const char *name, int flag);
     bool isOpen();
     bool close();
@@ -63,6 +65,10 @@ inline const char* FilePosixApi::strError(int error)
     return ::strerror(error);
 }
 
+inline FilePosixApi::FilePosixApi() :
+    fd(-1)
+{}
+
 inline bool FilePosixApi::isOpen()
 {
     return (fd != -1);
@@ -81,7 +87,13 @@ inline bool FilePosixApi::open(const char *name, int flag)
 
 inline bool FilePosixApi::close()
 {
-    return (::close(fd) != -1);
+    if (::close(fd) != -1)
+    {
+        fd = -1;
+        return true;
+    }
+
+    return false;
 }
 
 inline bool FilePosixApi::resize(size_t len)

@@ -13,6 +13,19 @@ AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_LIBTOOL
 
+# Option to enable debugging
+AC_ARG_ENABLE(debug,
+              [AC_HELP_STRING([--enable-debug], [Debugging [default=no]])],
+              [with_debug=yes], [with_debug=no])
+AC_MSG_RESULT(enable debug... $with_debug)
+if test "x$with_debug" == "xyes" ; then
+  CFLAGS=" -ggdb -O0 -D_DEBUG -Wall"
+  CXXFLAGS=" -ggdb -O0 -D_DEBUG -Wall"
+else
+  CFLAGS=" -O2 -Wno-deprecated"
+  CXXFLAGS=" -O2 -Wno-deprecated"
+fi
+
 # Checks for libraries.
 LIBCURL_CHECK_CONFIG([yes], [7.19.0])
 AC_SUBST(LIBCURL_CPPFLAGS)

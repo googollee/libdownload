@@ -14,4 +14,10 @@ private:
 
 #include "DownloadException.h"
 
+#ifdef _DEBUG
+#define LOG(level, ...) printf(__VA_ARGS__)
+#else
+#define LOG(level, ...)
+#endif //_DEBUG
+
 #endif
