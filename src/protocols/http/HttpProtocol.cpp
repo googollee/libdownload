@@ -11,9 +11,9 @@
  *          |                  | 0..n
  *          |                  |
  *          |                  |
- *          |         +------------------+           +--------+
- *          +-------<>|     HttpTask     |<>---------|TaskInfo|
- * HttpProtocolData &d+------------------+           +--------+
+ *          |         +------------------+           +--------------+
+ *          +-------<>|     HttpTask     |<>---------|TaskInfo *info|
+ * HttpProtocolData *d+------------------+           +--------------+
  *                    |File file         |
  *                    |HttpConfigure conf|
  *            +-------|SessionState state|
@@ -22,7 +22,7 @@
  *            |                | 1..n
  *            |                |
  *            |                |
- * HttpTask &t|       +------------------+
+ * HttpTask *t|       +------------------+
  *            +-----<>|     Session      |
  *                    +------------------+
  *             +------|size_t pos        |--+
@@ -53,12 +53,6 @@
         if (rete != CURLE_OK)                                           \
             throw DOWNLOADEXCEPTION(rete, "CURL", curl_easy_strerror(rete)); \
     }
-
-using std::vector;
-using std::map;
-using std::string;
-
-using filesystem::File;
 
 enum HttpError
 {
@@ -154,7 +148,7 @@ void HttpProtocolData::initTask(HttpTask *task)
 
     if ( (task->info->outputName == NULL) || (task->info->outputName[0] == '\0') )
         getFileName(ehandle, task);
-    string output = task->info->outputPath;
+    std::string output = task->info->outputPath;
     output.append(task->info->outputName);
     task->file.open(output.c_str(), filesystem::Create | filesystem::Write);
     if (!task->file.isOpen())
@@ -167,6 +161,8 @@ void HttpProtocolData::initTask(HttpTask *task)
     curl_easy_cleanup(ehandle);
     delete task->sessions[0];
     task->sessions.clear();
+
+    task->info->totalSource = task->info->validSource = 0;
 
     // make download sessions
     unsigned int begin = 0;
@@ -237,7 +233,7 @@ void HttpProtocolData::loadTask(HttpTask *task,
 
 bool findNonDownload(HttpTask *task, size_t *begin, size_t *len)
 {
-    vector<size_t> downloadBegins;
+    std::vector<size_t> downloadBegins;
     for (Sessions::iterator it = task->sessions.begin();
          it != task->sessions.end();
          ++it)
@@ -370,6 +366,8 @@ void HttpProtocolData::makeSession(HttpTask *task, size_t begin, size_t len)
     {
         throw DOWNLOADEXCEPTION(retm, "CURL", curl_multi_strerror(retm));
     }
+    ++task->info->validSource;
+    ++task->info->totalSource;
     ++running;
 
     task->sessions.push_back(ses.get());
@@ -406,6 +404,8 @@ void HttpProtocolData::removeSession(HttpSession *ses)
 
         curl_easy_cleanup(ses->handle);
 
+        --task->info->validSource;
+        --task->info->totalSource;
         --running;
     }
 
@@ -515,6 +515,7 @@ void HttpProtocol::addTask(TaskInfo *info)
     task->info = info;
     task->info->protocol = this;
     task->state = HT_PREPARE;
+    task->info->totalSource = task->info->validSource = 0;
 
     taskLog(task->info, "Add task, initialize");
 
