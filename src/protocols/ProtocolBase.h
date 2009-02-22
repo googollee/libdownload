@@ -107,7 +107,7 @@ public:
 
     // return the downloading items number
     // downloaded and uploaded speed unit is byte.
-    virtual size_t perform() = 0;
+    virtual int perform() = 0;
 
     // return the string of error
     virtual const char *strerror(int error) = 0;

@@ -47,9 +47,9 @@ struct HttpSession
     CURL *handle;
     size_t pos;
     size_t length;
-    HttpTask &t;
+    HttpTask *t; // a reference.
 
-    HttpSession(HttpTask &task)
+    HttpSession(HttpTask *task)
         : handle(NULL),
           pos(0),
           length(0),
@@ -63,11 +63,11 @@ struct HttpTask
     filesystem::File file;
     HttpConfigure conf;
     HttpTaskState state;
-    HttpProtocolData &d;
+    HttpProtocolData *d; // a reference
 
     Sessions sessions;
 
-    HttpTask(HttpProtocolData &data)
+    HttpTask(HttpProtocolData *data)
         : info(NULL),
           state(HT_INVALID),
           d(data)
@@ -76,7 +76,7 @@ struct HttpTask
 
 struct HttpProtocolData
 {
-    HttpProtocol *p;
+    HttpProtocol *p; // a reference
 
     CURLM *handle;
     Tasks tasks;

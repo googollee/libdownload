@@ -32,7 +32,7 @@ public:
                           fd_set *write_fd_set,
                           fd_set *exc_fd_set,
                           int *max_fd);
-    virtual size_t perform();
+    virtual int perform();
 
     virtual const char* strerror(int error);
 

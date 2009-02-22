@@ -77,20 +77,20 @@ size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession *ses)
     if (ses->length == 0)
         return totalSize;
 
-    HttpTask &task = ses->t;
+    HttpTask *task = ses->t;
 
     const size_t shouldWrite = (totalSize < ses->length) ? totalSize : ses->length;
 
-    task.file.seek(ses->pos, filesystem::FromBegin);
-    const size_t writed = task.file.write(buffer, shouldWrite);
+    task->file.seek(ses->pos, filesystem::FromBegin);
+    const size_t writed = task->file.write(buffer, shouldWrite);
 
-    task.info->downloadMap.setRangeByLength(ses->pos, ses->pos + writed, true);
+    task->info->downloadMap.setRangeByLength(ses->pos, ses->pos + writed, true);
     ses->length -= writed;
     ses->pos += writed;
 
     if (ses->length == 0)
     {
-        task.d.finishSessions.push_back(ses);
+        task->d->finishSessions.push_back(ses);
         CURLcode rete = curl_easy_pause(ses->handle, CURLPAUSE_ALL);
         CHECK_CURLE(rete);
     }
@@ -130,29 +130,18 @@ void getFileName(CURL *handle, HttpTask *task)
 
 void HttpProtocolData::initTask(HttpTask *task)
 {
-    p->taskLog(task->info, "initialize task");
+    LOG(0, "enter initTask, task = %p\n", task);
 
-    task->state = HT_PREPARE;
+    CURL *ehandle = task->sessions[0]->handle;
 
-    CURL *handle = curl_easy_init();
-    if (handle == NULL)
-        throw DOWNLOADEXCEPTION(CURL_BAD_ALLOC, "CURL", strerror(CURL_BAD_ALLOC));
+    CURLMcode retm = curl_multi_remove_handle(handle, ehandle);
+    if (retm != CURLM_OK)
+        throw DOWNLOADEXCEPTION(retm, "CURLM", curl_multi_strerror(retm));
 
-    CURLcode rete = curl_easy_setopt(handle, CURLOPT_URL, task->info->url);
-    CHECK_CURLE(rete);
-
-    rete = curl_easy_setopt(handle, CURLOPT_NOBODY, 1);
-    CHECK_CURLE(rete);
-
-    rete = curl_easy_setopt(handle, CURLOPT_FILETIME, 1);
-    CHECK_CURLE(rete);
-
-    // here need changed as asio.
-    rete = curl_easy_perform(handle);
-    CHECK_CURLE(rete);
-
+    // get file information.
+    char logBuffer[64] = {0};
     double length;
-    rete = curl_easy_getinfo(handle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &length);
+    CURLcode rete = curl_easy_getinfo(ehandle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &length);
     CHECK_CURLE(rete);
     task->info->totalSize = static_cast<size_t>(length);
     task->info->downloadSize = 0;
@@ -160,18 +149,58 @@ void HttpProtocolData::initTask(HttpTask *task)
     task->info->downloadMap.setAll(false);
     task->info->validMap = BitMap(size_t(length), task->conf.bytesPerBlock);
     task->info->validMap.setAll(true);
+    snprintf(logBuffer, 63, "File length: %lu", task->info->totalSize);
+    p->taskLog(task->info, logBuffer);
 
     if ( (task->info->outputName == NULL) || (task->info->outputName[0] == '\0') )
-        getFileName(handle, task);
+        getFileName(ehandle, task);
     string output = task->info->outputPath;
     output.append(task->info->outputName);
     task->file.open(output.c_str(), filesystem::Create | filesystem::Write);
     if (!task->file.isOpen())
         throw DOWNLOADEXCEPTION(FAIL_OPEN_FILE, "HTTP", strerror(FAIL_OPEN_FILE));
+    snprintf(logBuffer, 63, "File path: %s", output.c_str());
+    p->taskLog(task->info, logBuffer);
 
     task->file.resize(task->info->totalSize);
 
-    curl_easy_cleanup(handle);
+    curl_easy_cleanup(ehandle);
+    delete task->sessions[0];
+    task->sessions.clear();
+
+    // make download sessions
+    unsigned int begin = 0;
+    unsigned int end = 0;
+    unsigned int nextBegin = 0;
+    TaskInfo *info = task->info;
+    int i = 0;
+    while ( (i < task->conf.sessionNumber) && (begin < info->downloadMap.size()) )
+    {
+        end = info->downloadMap.find(true, begin);
+        nextBegin = info->downloadMap.find(false, end);
+        if ( (end == info->downloadMap.size()) || (nextBegin == info->downloadMap.size()) )
+        {
+            // devide [begin, end) to sessionNumber-i directly.
+            int n = task->conf.sessionNumber - i;
+            while (begin < end)
+            {
+                int len = (end - begin) / n;
+                makeSession(task, begin * info->downloadMap.bytesPerBit(), len * info->downloadMap.bytesPerBit());
+                begin += len;
+                --n;
+            }
+            i = task->conf.sessionNumber;
+        }
+        else
+        {
+            // make [begin, end) a seesion.
+            makeSession(task, begin * info->downloadMap.bytesPerBit(), (end - begin) * info->downloadMap.bytesPerBit());
+            ++i;
+        }
+        begin = nextBegin;
+    }
+
+    task->state = HT_DOWNLOAD;
 }
 
 void HttpProtocolData::removeTask(const Tasks::iterator &taskIt)
@@ -236,10 +265,12 @@ bool findNonDownload(HttpTask *task, size_t *begin, size_t *len)
 
 void HttpProtocolData::checkSession(HttpSession *ses)
 {
-    HttpTask &task = ses->t;
+    LOG(0, "enter checkSession, ses = %p\n", ses);
+
+    HttpTask *task = ses->t;
 
     LOG(0, "check task %d session from %lu, len %lu, sessions size = %lu\n",
-        task.info->id, ses->pos, ses->length, task.sessions.size());
+        task->info->id, ses->pos, ses->length, task->sessions.size());
 
     if (ses->length > 0)
         return;
@@ -248,15 +279,15 @@ void HttpProtocolData::checkSession(HttpSession *ses)
 
     size_t begin;
     size_t len;
-    if (findNonDownload(&task, &begin, &len))
+    if (findNonDownload(task, &begin, &len))
     {
-        makeSession(&task, begin, len);
+        makeSession(task, begin, len);
     }
 
-    if (task.sessions.size() == 0)
+    if (task->sessions.size() == 0)
     {
-        LOG(0, "task %d finish\n", task.info->id);
-        p->downloadFinish(task.info);
+        LOG(0, "task %d finish\n", task->info->id);
+        p->downloadFinish(task->info);
     }
 }
 
@@ -285,7 +316,10 @@ void HttpProtocolData::checkTasks()
             switch (topRespCode)
             {
             case 2: // succeed download
-                removeSession(ses);
+                if (ses->t->state == HT_PREPARE)
+                    initTask(ses->t);
+                else
+                    removeSession(ses);
                 break;
             default:
                 break;
@@ -300,8 +334,11 @@ void HttpProtocolData::checkTasks()
 void HttpProtocolData::makeSession(HttpTask *task, size_t begin, size_t len)
 {
     LOG(0, "make task %d session from %lu, len %lu\n", task->info->id, begin, len);
+    char logBuffer[64] = {0};
+    snprintf(logBuffer, 63, "make new session from %lu, len %lu", begin, len);
+    p->taskLog(task->info, logBuffer);
 
-    HttpSession *ses = new HttpSession(*task);
+    std::auto_ptr<HttpSession> ses( new HttpSession(task) );
     ses->pos = begin;
     size_t end = begin + len;
     if (task->info->totalSize < end)
@@ -317,10 +354,10 @@ void HttpProtocolData::makeSession(HttpTask *task, size_t begin, size_t len)
     rete = curl_easy_setopt(ses->handle, CURLOPT_WRITEFUNCTION, writeCallback);
     CHECK_CURLE(rete);
 
-    rete = curl_easy_setopt(ses->handle, CURLOPT_WRITEDATA, ses);
+    rete = curl_easy_setopt(ses->handle, CURLOPT_WRITEDATA, ses.get());
     CHECK_CURLE(rete);
 
-    rete = curl_easy_setopt(ses->handle, CURLOPT_PRIVATE, ses);
+    rete = curl_easy_setopt(ses->handle, CURLOPT_PRIVATE, ses.get());
     CHECK_CURLE(rete);
 
     char range[128] = {0};
@@ -335,26 +372,31 @@ void HttpProtocolData::makeSession(HttpTask *task, size_t begin, size_t len)
     }
     ++running;
 
-    task->sessions.push_back(ses);
+    task->sessions.push_back(ses.get());
+
+    ses.release();
 }
 
 void HttpProtocolData::removeSession(HttpSession *ses)
 {
-    HttpTask &task = ses->t;
-    LOG(0, "remove task %d session from %lu, len %lu\n", task.info->id, ses->pos, ses->length);
+    HttpTask *task = ses->t;
+    LOG(0, "remove task %d session from %lu, len %lu\n", task->info->id, ses->pos, ses->length);
 
-    Sessions::iterator it = std::find(task.sessions.begin(),
-                                   task.sessions.end(),
-                                   ses);
+    Sessions::iterator it = std::find(task->sessions.begin(),
+                                      task->sessions.end(),
+                                      ses);
 #ifdef _DEBUG
-    if (it == task.sessions.end())
+    if (it == task->sessions.end())
     {
         LOG(0, "can't find ses\n");
         return;
     }
 #endif
+    char logBuffer[64] = {0};
+    snprintf(logBuffer, 63, "remove session at %lu", ses->pos);
+    p->taskLog(task->info, logBuffer);
 
-    task.sessions.erase(it);
+    task->sessions.erase(it);
 
     if (ses->handle != NULL)
     {
@@ -377,6 +419,8 @@ void HttpProtocolData::removeSession(HttpSession *ses)
 HttpProtocol::HttpProtocol()
     : d(new HttpProtocolData)
 {
+    LOG(0, "enter HttpProtocol ctor\n");
+
     d->p = this;
 
     CURLcode rete = curl_global_init(CURL_GLOBAL_ALL);
@@ -390,6 +434,7 @@ HttpProtocol::HttpProtocol()
 
 HttpProtocol::~HttpProtocol()
 {
+    LOG(0, "enter HttpProtocol dtor\n");
     for (Tasks::iterator it = d->tasks.begin();
          it != d->tasks.end();
          ++it)
@@ -453,6 +498,8 @@ const char* HttpProtocol::getAllOptions()
 
 void HttpProtocol::addTask(TaskInfo *info)
 {
+    LOG(0, "enter addTask, info = %p\n", info);
+
     if (info == NULL)
         throw DOWNLOADEXCEPTION(NULL_INFO, "HTTP", strerror(NULL_INFO));
 
@@ -464,51 +511,48 @@ void HttpProtocol::addTask(TaskInfo *info)
         return;
     }
 
-    HttpTask *task = new HttpTask(*d);
+    std::auto_ptr<HttpTask> task( new HttpTask(d.get()) );
     task->info = info;
-    task->state = HT_INVALID;
     task->info->protocol = this;
+    task->state = HT_PREPARE;
 
-    taskLog(task->info, "Add task");
+    taskLog(task->info, "Add task, initialize");
 
-    d->initTask(task);
-    task->state = HT_DOWNLOAD;
+    std::auto_ptr<HttpSession> ses( new HttpSession(task.get()) );
+    ses->handle = curl_easy_init();
+    if (ses->handle == NULL)
+        throw DOWNLOADEXCEPTION(CURL_BAD_ALLOC, "CURL", strerror(CURL_BAD_ALLOC));
 
-    unsigned int begin = 0;
-    unsigned int end = 0;
-    unsigned int nextBegin = 0;
-    int i = 0;
-    while ( (i < task->conf.sessionNumber) && (begin < info->downloadMap.size()) )
+    CURLcode rete = curl_easy_setopt(ses->handle, CURLOPT_URL, task->info->url);
+    CHECK_CURLE(rete);
+
+    rete = curl_easy_setopt(ses->handle, CURLOPT_NOBODY, 1);
+    CHECK_CURLE(rete);
+
+    rete = curl_easy_setopt(ses->handle, CURLOPT_FILETIME, 1);
+    CHECK_CURLE(rete);
+
+    rete = curl_easy_setopt(ses->handle, CURLOPT_PRIVATE, ses.get());
+    CHECK_CURLE(rete);
+
+    CURLMcode retm = curl_multi_add_handle(d->handle, ses->handle);
+    if (retm != CURLM_OK)
     {
-        end = info->downloadMap.find(true, begin);
-        nextBegin = info->downloadMap.find(false, end);
-        if ( (end == info->downloadMap.size()) || (nextBegin == info->downloadMap.size()) )
-        {
-            // devide [begin, end) to sessionNumber-i directly.
-            int n = task->conf.sessionNumber - i;
-            while (begin < end)
-            {
-                int len = (end - begin) / n;
-                d->makeSession(task, begin * info->downloadMap.bytesPerBit(), len * info->downloadMap.bytesPerBit());
-                begin += len;
-                --n;
-            }
-            i = task->conf.sessionNumber;
-        }
-        else
-        {
-            // make [begin, end) a seesion.
-            d->makeSession(task, begin * info->downloadMap.bytesPerBit(), (end - begin) * info->downloadMap.bytesPerBit());
-            ++i;
-        }
-        begin = nextBegin;
+        throw DOWNLOADEXCEPTION(retm, "CURL", curl_multi_strerror(retm));
     }
+    ++d->running;
 
-    d->tasks.insert(Tasks::value_type(info->id, task));
+    d->tasks.insert(Tasks::value_type(info->id, task.get()));
+    task->sessions.push_back(ses.get());
+
+    ses.release();
+    task.release();
 }
 
 void HttpProtocol::removeTask(const TaskId id)
 {
+    LOG(0, "enter removeTask, id = %u\n", id);
+
     Tasks::iterator it = d->tasks.find(id);
     if (it == d->tasks.end())
     {
@@ -517,15 +561,15 @@ void HttpProtocol::removeTask(const TaskId id)
         return;
     }
 
-    char log[32];
-    sprintf(log, "remove task %d", id);
-    taskLog(it->second->info, log);
+    taskLog(it->second->info, "remove task");
 
     d->removeTask(it);
 }
 
 bool HttpProtocol::hasTask(const TaskId id)
 {
+    LOG(0, "enter hasTask, id = %u\n", id);
+
     Tasks::iterator it = d->tasks.find(id);
     return it != d->tasks.end();
 }
@@ -533,6 +577,8 @@ bool HttpProtocol::hasTask(const TaskId id)
 void HttpProtocol::saveTask(const TaskId id,
                             std::ostream_iterator<char> &out)
 {
+    LOG(0, "enter saveTask, id = %u\n", id);
+
     Tasks::iterator it = d->tasks.find(id);
     if (it == d->tasks.end())
     {
@@ -541,9 +587,7 @@ void HttpProtocol::saveTask(const TaskId id,
         return;
     }
 
-    char log[32];
-    sprintf(log, "save task %d", id);
-    taskLog(it->second->info, log);
+    taskLog(it->second->info, "save task");
 
     d->saveTask(it, out);
 }
@@ -552,6 +596,8 @@ void HttpProtocol::loadTask(TaskInfo *info,
                             std::istream_iterator<char> &begin,
                             std::istream_iterator<char> &end)
 {
+    LOG(0, "enter loadTask, info = %p\n", info);
+
     Tasks::iterator it = d->tasks.find(info->id);
     if (it != d->tasks.end())
     {
@@ -560,13 +606,12 @@ void HttpProtocol::loadTask(TaskInfo *info,
         return;
     }
 
-    HttpTask *task = new HttpTask(*d);
+    std::auto_ptr<HttpTask> task( new HttpTask(d.get()) );
     task->info = info;
-    d->loadTask(task, begin, end);
+    d->loadTask(task.get(), begin, end);
 
-    char log[32];
-    sprintf(log, "load task %d", info->id);
-    taskLog(info, log);
+    task.release();
+    taskLog(info, "load task");
 }
 
 void HttpProtocol::getFdSet(fd_set *read_fd_set,
@@ -574,6 +619,9 @@ void HttpProtocol::getFdSet(fd_set *read_fd_set,
                             fd_set *exc_fd_set,
                             int *max_fd)
 {
+    LOG(0, "enter getFdSet, read_fd_set = %p, write_fd_set = %p, exc_fd_set = %p, max_fd = %p\n",
+        read_fd_set, write_fd_set, exc_fd_set, max_fd);
+
     // check task status.
     CURLMcode retm = curl_multi_fdset(d->handle,
                                       read_fd_set,
@@ -587,7 +635,7 @@ void HttpProtocol::getFdSet(fd_set *read_fd_set,
     }
 }
 
-size_t HttpProtocol::perform()
+int HttpProtocol::perform()
 {
     int running;
     CURLMcode retm = CURLM_OK;
@@ -620,6 +668,8 @@ size_t HttpProtocol::perform()
 
 const char* HttpProtocol::strerror(int error)
 {
+    LOG(0, "enter strerror, error = %d\n", error);
+
     static const char *errorString[] =
         {
             "alloc curl easy handle fail.",      // CURL_BAD_ALLOC
