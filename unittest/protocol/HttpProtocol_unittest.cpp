@@ -37,7 +37,7 @@ TEST(HttpTest, NormalDownload)
         TaskInfo *info = new TaskInfo;
 
         info->id = 0;
-        info->url = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
+        info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
         info->outputName = NULL;
 

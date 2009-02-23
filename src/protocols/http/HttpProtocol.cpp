@@ -94,7 +94,7 @@ size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession *ses)
 
 void getFileName(CURL *handle, HttpTask *task)
 {
-    const char *p = task->info->url + strlen(task->info->url);
+    const char *p = task->info->uri + strlen(task->info->uri);
     bool findNonNameChar = false;
     do
     {
@@ -113,7 +113,7 @@ void getFileName(CURL *handle, HttpTask *task)
             findNonNameChar = true;
             break;
         }
-    } while ( !findNonNameChar && (p >= task->info->url) );
+    } while ( !findNonNameChar && (p >= task->info->uri) );
     ++p;
 
     if (task->info->outputName != NULL)
@@ -201,6 +201,7 @@ void HttpProtocolData::initTask(HttpTask *task)
 
 void HttpProtocolData::removeTask(const Tasks::iterator &taskIt)
 {
+    LOG(0, "enter removeTask\n");
     HttpTask *task = taskIt->second;
     assert(task != NULL);
 
@@ -283,7 +284,12 @@ void HttpProtocolData::checkSession(HttpSession *ses)
     if (task->sessions.size() == 0)
     {
         LOG(0, "task %d finish\n", task->info->id);
+
+        const TaskId id = task->info->id;
         p->downloadFinish(task->info);
+
+        if (p->hasTask(id))
+            p->removeTask(id);
     }
 }
 
@@ -315,7 +321,10 @@ void HttpProtocolData::checkTasks()
                 if (ses->t->state == HT_PREPARE)
                     initTask(ses->t);
                 else
-                    removeSession(ses);
+                {
+                    ses->length = 0; // make sure session will be removed.
+                    checkSession(ses);
+                }
                 break;
             default:
                 break;
@@ -345,7 +354,7 @@ void HttpProtocolData::makeSession(HttpTask *task, size_t begin, size_t len)
     if (ses->handle == NULL)
         throw DOWNLOADEXCEPTION(CURL_BAD_ALLOC, "CURL", strerror(CURL_BAD_ALLOC));
 
-    CURLcode rete = curl_easy_setopt(ses->handle, CURLOPT_URL, task->info->url);
+    CURLcode rete = curl_easy_setopt(ses->handle, CURLOPT_URL, task->info->uri);
 
     rete = curl_easy_setopt(ses->handle, CURLOPT_WRITEFUNCTION, writeCallback);
     CHECK_CURLE(rete);
@@ -524,7 +533,7 @@ void HttpProtocol::addTask(TaskInfo *info)
     if (ses->handle == NULL)
         throw DOWNLOADEXCEPTION(CURL_BAD_ALLOC, "CURL", strerror(CURL_BAD_ALLOC));
 
-    CURLcode rete = curl_easy_setopt(ses->handle, CURLOPT_URL, task->info->url);
+    CURLcode rete = curl_easy_setopt(ses->handle, CURLOPT_URL, task->info->uri);
     CHECK_CURLE(rete);
 
     rete = curl_easy_setopt(ses->handle, CURLOPT_NOBODY, 1);
@@ -648,7 +657,7 @@ int HttpProtocol::perform()
     if (retm != CURLM_OK)
         throw DOWNLOADEXCEPTION(retm, "CURL", curl_multi_strerror(retm));
 
-    if ( (d->running > 0) && (running != d->running) )
+    if (running != d->running)
     {
         LOG(0, "running = %d / %d\n", d->running, running);
         d->checkTasks();
@@ -664,7 +673,7 @@ int HttpProtocol::perform()
     }
     d->finishSessions.clear();
 
-    return running;
+    return d->tasks.size();
 }
 
 const char* HttpProtocol::strerror(int error)

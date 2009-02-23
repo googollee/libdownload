@@ -21,7 +21,7 @@ struct TaskInfo
 {
     TaskId id;
 
-    char *url;
+    char *uri;
     char *outputPath;
     char *outputName;
 
@@ -31,16 +31,15 @@ struct TaskInfo
     //...
     char *options;
 
-    size_t totalSize;
-
-    BitMap downloadMap;
     char *comment;
 
     // no need save below
+    size_t totalSize;
     size_t downloadSize;
     size_t uploadSize;
 
     BitMap validMap;
+    BitMap downloadMap;
 
     int totalSource;
     int validSource;
@@ -50,12 +49,12 @@ struct TaskInfo
 
     TaskInfo()
         : id(0),
-          url(NULL),
+          uri(NULL),
           outputPath(NULL),
           outputName(NULL),
           options(NULL),
-          totalSize(0),
           comment(NULL),
+          totalSize(0),
           downloadSize(0),
           uploadSize(0),
           totalSource(0),
