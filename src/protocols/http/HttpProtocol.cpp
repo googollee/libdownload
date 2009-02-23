@@ -79,6 +79,7 @@ size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession *ses)
     const size_t writed = task->file.write(buffer, shouldWrite);
 
     task->info->downloadMap.setRangeByLength(ses->pos, ses->pos + writed, true);
+    task->info->downloadSize += writed;
     ses->length -= writed;
     ses->pos += writed;
 
@@ -260,6 +261,37 @@ bool findNonDownload(HttpTask *task, size_t *begin, size_t *len)
     return false;
 }
 
+void HttpProtocolData::splitMaxSession(HttpTask *task)
+{
+    size_t maxLength = 0;
+    Sessions::iterator maxLengthSes = task->sessions.end();
+
+    for (Sessions::iterator it = task->sessions.begin();
+         it != task->sessions.end();
+         ++it)
+    {
+        if ( ((*it)->length > maxLength) &&
+             ((*it)->length > size_t(2*task->conf.minSessionBlocks)) )
+        {
+            maxLengthSes = it;
+        }
+    }
+
+    if (maxLengthSes != task->sessions.end())
+    {
+        size_t length = (*maxLengthSes)->length / 2;
+        (*maxLengthSes)->length -= length;
+        size_t begin = (*maxLengthSes)->pos + (*maxLengthSes)->length;
+
+        char logBuffer[64];
+        snprintf(logBuffer, 63, "split session at %lu, length %lu",
+                 (*maxLengthSes)->pos, (*maxLengthSes)->length);
+        p->taskLog(task->info, logBuffer);
+
+        makeSession(task, begin, length);
+    }
+}
+
 void HttpProtocolData::checkSession(HttpSession *ses)
 {
     LOG(0, "enter checkSession, ses = %p\n", ses);
@@ -279,6 +311,10 @@ void HttpProtocolData::checkSession(HttpSession *ses)
     if (findNonDownload(task, &begin, &len))
     {
         makeSession(task, begin, len);
+    }
+    else
+    {
+        splitMaxSession(task);
     }
 
     if (task->sessions.size() == 0)

@@ -45,9 +45,16 @@ TEST(HttpTest, NormalDownload)
         info->state = DOWNLOAD;
 
         while (http.perform() > 0)
+        {}
+
+        printf("download finish, total size = %lu\n", info->totalSize);
+        printf("download finish, download size = %lu\n", info->downloadSize);
+        printf("download map:\n");
+        for (size_t i=0; i<info->downloadMap.size(); ++i)
         {
-//            printf("progress: %g\n", (double)info->downloadSize / info->totalSize);
+            printf("%d", info->downloadMap.get(i));
         }
+        printf("\n");
 
         delete info;
     }

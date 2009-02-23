@@ -95,6 +95,7 @@ struct HttpProtocolData
     void checkTasks();
 
     void makeSession(HttpTask *task, size_t pos, size_t len);
+    void splitMaxSession(HttpTask *task);
     void removeSession(HttpSession *session);
 
     HttpProtocolData()
