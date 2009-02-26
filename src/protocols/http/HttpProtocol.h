@@ -15,18 +15,20 @@ public:
 
     virtual const char* name();
     virtual bool canProcess(const char *uri);
-    virtual void setOptions(const char *opts);
+
+    virtual void loadOptions(std::istream &in);
+    virtual void saveOptions(std::ostream &out);
+
     virtual const char* getAllOptions();
+    virtual const char* control(const char* cmd);
 
     virtual void addTask(TaskInfo *info);
     virtual void removeTask(const TaskId id);
     virtual bool hasTask(const TaskId id);
+    virtual const char *controlTask(const TaskId id, const char *cmd);
 
-    virtual void saveTask(const TaskId id,
-                          std::ostream_iterator<char> &out);
-    virtual void loadTask(TaskInfo *info,
-                          std::istream_iterator<char> &begin,
-                          std::istream_iterator<char> &end);
+    virtual void loadTask(TaskInfo *info, std::istream &in);
+    virtual void saveTask(const TaskId id, std::ostream &out);
 
     virtual void getFdSet(fd_set *read_fd_set,
                           fd_set *write_fd_set,

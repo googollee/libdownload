@@ -85,11 +85,10 @@ struct HttpProtocolData
 
     void initTask(HttpTask *task);
     void removeTask(const Tasks::iterator &it);
-    void saveTask(const Tasks::iterator &it,
-                  std::ostream_iterator<char> &out);
-    void loadTask(HttpTask *task,
-                  std::istream_iterator<char> &begin,
-                  std::istream_iterator<char> &end);
+
+    void saveTask(const Tasks::iterator &it, std::ostream &out);
+    void loadTask(HttpTask *task, std::istream &in);
+
     void checkTask(HttpTask *task);
     void checkSession(HttpSession *session);
     void checkTasks();

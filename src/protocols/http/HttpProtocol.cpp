@@ -220,15 +220,12 @@ void HttpProtocolData::removeTask(const Tasks::iterator &taskIt)
     delete task;
 }
 
-void HttpProtocolData::saveTask(const Tasks::iterator &taskIt,
-                                std::ostream_iterator<char> &out)
+void HttpProtocolData::saveTask(const Tasks::iterator &taskIt, std::ostream &out)
 {
     throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
 }
 
-void HttpProtocolData::loadTask(HttpTask *task,
-                                std::istream_iterator<char> &begin,
-                                std::istream_iterator<char> &end)
+void HttpProtocolData::loadTask(HttpTask *task, std::istream &in)
 {
     throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
 }
@@ -531,14 +528,28 @@ bool HttpProtocol::canProcess(const char *uri)
     return true;
 }
 
-void HttpProtocol::setOptions(const char *opts)
+void HttpProtocol::loadOptions(std::istream &in)
 {
     throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
 }
 
+void HttpProtocol::saveOptions(std::ostream &out)
+{
+    throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
+}
+
+const char* HttpProtocol::control(const char *cmd)
+{
+    throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
+
+    return NULL;
+}
+
 const char* HttpProtocol::getAllOptions()
 {
-    return "<sessionNumber default=\"5\" />";
+    throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
+
+    return NULL;
 }
 
 void HttpProtocol::addTask(TaskInfo *info)
@@ -620,8 +631,27 @@ bool HttpProtocol::hasTask(const TaskId id)
     return it != d->tasks.end();
 }
 
-void HttpProtocol::saveTask(const TaskId id,
-                            std::ostream_iterator<char> &out)
+void HttpProtocol::loadTask(TaskInfo *info, std::istream &in)
+{
+    LOG(0, "enter loadTask, info = %p\n", info);
+
+    Tasks::iterator it = d->tasks.find(info->id);
+    if (it != d->tasks.end())
+    {
+        LOG(0, "id %d exist\n", info->id);
+        taskError(info, TASK_EXIST);
+        return;
+    }
+
+    std::auto_ptr<HttpTask> task( new HttpTask(d.get()) );
+    task->info = info;
+    d->loadTask(task.get(), in);
+
+    task.release();
+    taskLog(info, "load task");
+}
+
+void HttpProtocol::saveTask(const TaskId id, std::ostream &out)
 {
     LOG(0, "enter saveTask, id = %u\n", id);
 
@@ -638,26 +668,13 @@ void HttpProtocol::saveTask(const TaskId id,
     d->saveTask(it, out);
 }
 
-void HttpProtocol::loadTask(TaskInfo *info,
-                            std::istream_iterator<char> &begin,
-                            std::istream_iterator<char> &end)
+const char* HttpProtocol::controlTask(const TaskId id, const char *cmd)
 {
-    LOG(0, "enter loadTask, info = %p\n", info);
+    LOG(0, "enter controlTask, id = %u\n", id);
 
-    Tasks::iterator it = d->tasks.find(info->id);
-    if (it != d->tasks.end())
-    {
-        LOG(0, "id %d exist\n", info->id);
-        taskError(info, TASK_EXIST);
-        return;
-    }
+    throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
 
-    std::auto_ptr<HttpTask> task( new HttpTask(d.get()) );
-    task->info = info;
-    d->loadTask(task.get(), begin, end);
-
-    task.release();
-    taskLog(info, "load task");
+    return NULL;
 }
 
 void HttpProtocol::getFdSet(fd_set *read_fd_set,
