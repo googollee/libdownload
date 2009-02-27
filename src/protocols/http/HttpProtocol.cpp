@@ -44,6 +44,8 @@
 
 #include <curl/curl.h>
 
+#include <boost/format.hpp>
+
 #include <cstring>
 #include <string>
 #include <algorithm>
@@ -535,7 +537,15 @@ void HttpProtocol::loadOptions(std::istream &in)
 
 void HttpProtocol::saveOptions(std::ostream &out)
 {
-    throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
+    HttpConfigure defaultConf;
+
+    out << boost::format(
+        "<SessionNumber>%d</SessionNumber>\n"
+        "<MinSessionBlocks>%d</MinSessionBlocks>\n"
+        "<BytesPerBlock>%d</BytesPerBlock>")
+        % defaultConf.sessionNumber
+        % defaultConf.minSessionBlocks
+        % defaultConf.bytesPerBlock;
 }
 
 const char* HttpProtocol::control(const char *cmd)
@@ -547,9 +557,25 @@ const char* HttpProtocol::control(const char *cmd)
 
 const char* HttpProtocol::getAllOptions()
 {
-    throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
+    HttpConfigure defaultConf;
+    std::string buf = str(
+        boost::format(
+            "<SessionNumber>%d</SessionNumber>\n"
+            "<MinSessionBlocks>%d</MinSessionBlocks>\n"
+            "<BytesPerBlock>%d</BytesPerBlock>")
+        % defaultConf.sessionNumber
+        % defaultConf.minSessionBlocks
+        % defaultConf.bytesPerBlock
+        );
 
-    return NULL;
+    static char *ret = NULL;
+    if (ret != NULL)
+        delete [] ret;
+
+    ret = new char[buf.length() + 1];
+    strcpy(ret, buf.c_str());
+
+    return ret;
 }
 
 void HttpProtocol::addTask(TaskInfo *info)

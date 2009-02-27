@@ -3,6 +3,7 @@
 #include <utility/DownloadException.h>
 
 #include <gtest/gtest.h>
+#include <iostream>
 
 void ErrorCallback(TaskInfo *info, int error)
 {
@@ -29,6 +30,10 @@ TEST(HttpTest, NormalDownload)
     try
     {
         HttpProtocol http;
+        http.saveOptions(std::cout);
+        std::cout << std::endl;
+        printf("all options:\n%s\n", http.getAllOptions());
+
         http.taskError.connect(ErrorCallback);
         http.downloadFinish.connect(DownloadFinishCallback);
         http.taskLog.connect(LogTaskInfoCallback);
