@@ -1,5 +1,5 @@
 #ifndef SIMPLE_XML_PARSER_HEAD
-#define SIMPLE_XML_PARSER_HEAD_PARSER_HEAD
+#define SIMPLE_XML_PARSER_HEAD
 
 #include <memory>
 
@@ -35,7 +35,7 @@ public:
     virtual void error(int err, const char *errorstr);
 
     SimpleXmlParser();
-    ~SimpleXmlParser();
+    virtual ~SimpleXmlParser();
 
     bool feed(const char *str, int len);
     bool finish();
