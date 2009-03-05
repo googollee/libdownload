@@ -46,13 +46,13 @@ struct HttpSession
 {
     CURL *handle;
     size_t pos;
-    size_t length;
+    int length;  // -1 mean unknow length.
     HttpTask *t; // a reference.
 
     HttpSession(HttpTask *task)
         : handle(NULL),
           pos(0),
-          length(0),
+          length(-1),
           t(task)
         {}
 };
@@ -94,7 +94,7 @@ struct HttpProtocolData
     void checkTasks();
 
     void makeSession(HttpTask *task, size_t pos, size_t len);
-    void splitMaxSession(HttpTask *task);
+    bool splitMaxSession(HttpTask *task);
     void removeSession(HttpSession *session);
 
     HttpProtocolData()

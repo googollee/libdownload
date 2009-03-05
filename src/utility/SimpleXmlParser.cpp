@@ -58,7 +58,13 @@ static void error(GMarkupParseContext *context,
                   gpointer             user_data)
 {
     SimpleXmlParser *parser = (SimpleXmlParser*)user_data;
+    setParserError(parser, error);
     parser->error(error->code, error->message);
+}
+
+void setParserError(SimpleXmlParser *parser, void *error)
+{
+    parser->d->error = static_cast<GError*>(error);
 }
 
 static GMarkupParser subparser =

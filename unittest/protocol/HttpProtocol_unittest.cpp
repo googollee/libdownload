@@ -4,6 +4,7 @@
 
 #include <gtest/gtest.h>
 #include <iostream>
+#include <sstream>
 
 void ErrorCallback(TaskInfo *info, int error)
 {
@@ -12,7 +13,19 @@ void ErrorCallback(TaskInfo *info, int error)
 
 void DownloadFinishCallback(TaskInfo *info)
 {
-    printf("%s task %d download finished\n", info->protocol->name(), info->id);
+    ProtocolBase *p = info->protocol;
+
+    printf("%s task %d download finished\n", p->name(), info->id);
+
+//     std::ostringstream out;
+//     p->saveTask(info->id, out);
+//     std::string str = out.str();
+
+//     std::cout << str << std::endl;
+//     std::istringstream in(str);
+//     TaskInfo *i = new TaskInfo;
+//     i->id = 1;
+//     p->loadTask(i, in);
 }
 
 void LogTaskInfoCallback(TaskInfo *info, const char *log)
@@ -30,9 +43,6 @@ TEST(HttpTest, NormalDownload)
     try
     {
         HttpProtocol http;
-        http.saveOptions(std::cout);
-        std::cout << std::endl;
-        printf("all options:\n%s\n", http.getAllOptions());
 
         http.taskError.connect(ErrorCallback);
         http.downloadFinish.connect(DownloadFinishCallback);

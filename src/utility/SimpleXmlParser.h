@@ -45,6 +45,8 @@ public:
 
 private:
     std::auto_ptr<SimpleXmlParserData> d;
+
+    friend void setParserError(SimpleXmlParser *parser, void *error);
 };
 
 #endif
