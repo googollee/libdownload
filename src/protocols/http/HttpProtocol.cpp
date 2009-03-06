@@ -40,6 +40,7 @@
 #include "HttpProtocol.h"
 #include "HttpProtocolImpl.h"
 
+#include <utility/File.h>
 #include <utility/DownloadException.h>
 #include <utility/SimpleXmlParser.h>
 
@@ -238,6 +239,12 @@ void HttpProtocolData::initTask(HttpTask *task)
         getFileName(ehandle, task);
     std::string output = info->outputPath;
     output.append(info->outputName);
+
+    if (info->totalSize == 0)
+    {
+        filesystem::File::remove(output.c_str());
+    }
+
     task->file.open(output.c_str(), filesystem::Create | filesystem::Write);
     if (!task->file.isOpen())
         throw DOWNLOADEXCEPTION(FAIL_OPEN_FILE, "HTTP", strerror(FAIL_OPEN_FILE));
@@ -262,13 +269,13 @@ void HttpProtocolData::initTask(HttpTask *task)
         }
     }
 
-    if (info->totalSize > 0)
+    if ( (info->totalSize > 0) && (task->conf.sessionNumber > 1) )
     {
-        // make download sessions
+        LOG(0, "make download sessions\n");
         // seperate download part in 2 steps:
         // 1 give each non-download part a session;
         // 2 find a biggest part and divide, repeat till enough session.
-        unsigned int begin     = ses->pos;
+        unsigned int begin     = ses->pos / info->downloadMap.bytesPerBit();
         unsigned int end       = info->downloadMap.find(true, begin);
         unsigned int nextBegin = info->downloadMap.find(false, end);
 
@@ -315,8 +322,30 @@ void HttpProtocolData::removeTask(const Tasks::iterator &taskIt)
          it != task->sessions.end();
          ++it)
     {
-        removeSession(*it);
+        HttpSession *ses = *it;
+
+        char logBuffer[64] = {0};
+        snprintf(logBuffer, 63, "remove session at %lu", ses->pos);
+        p->taskLog(task->info, logBuffer);
+
+        if (ses->handle != NULL)
+        {
+            CURLMcode retm = curl_multi_remove_handle(handle, ses->handle);
+            if (retm != CURLM_OK)
+                throw DOWNLOADEXCEPTION(retm, "CURLM", curl_multi_strerror(retm));
+
+            curl_easy_cleanup(ses->handle);
+
+            --task->info->validSource;
+            --task->info->totalSource;
+            --running;
+        }
+
+        ses->handle = NULL;
+        ses->pos = 0;
+        ses->length = 0;
     }
+    task->sessions.clear();
 
     task->file.close();
 
@@ -384,6 +413,7 @@ bool findNonDownload(HttpTask *task, size_t *begin, size_t *len)
          ++it)
     {
         downloadBegins.push_back((*it)->pos / task->info->downloadMap.bytesPerBit());
+        LOG(0, "ses pos = %lu\n", downloadBegins.back());
     }
 
     size_t b = task->info->downloadMap.find(false, 0);
@@ -432,9 +462,13 @@ bool HttpProtocolData::splitMaxSession(HttpTask *task)
         return false;
     }
 
-    size_t length = maxLengthSes->length / 2;
-    maxLengthSes->length -= length;
-    size_t begin = maxLengthSes->pos + maxLengthSes->length;
+    size_t begin0 = maxLengthSes->pos / task->conf.bytesPerBlock;
+    size_t length0 = maxLengthSes->length / task->conf.bytesPerBlock;
+    size_t length = length0 / 2;
+    size_t begin = (begin0 + length) * task->conf.bytesPerBlock;
+    length0 = begin - maxLengthSes->pos;
+    length = maxLengthSes->length - length0;
+    maxLengthSes->length = length0;
 
     char logBuffer[64];
     snprintf(logBuffer, 63, "split session at %lu, length %d",
@@ -760,6 +794,7 @@ void HttpProtocol::addTask(TaskInfo *info)
     taskLog(task->info, "Add task, initialize");
 
     std::auto_ptr<HttpSession> ses( new HttpSession(task.get()) );
+
     ses->handle = curl_easy_init();
     if (ses->handle == NULL)
         throw DOWNLOADEXCEPTION(CURL_BAD_ALLOC, "CURL", strerror(CURL_BAD_ALLOC));
@@ -832,11 +867,60 @@ void HttpProtocol::loadTask(TaskInfo *info, std::istream &in)
 
     std::auto_ptr<HttpTask> task( new HttpTask(d.get()) );
     task->info = info;
-    info->protocol = this;
+    task->info->protocol = this;
+    task->state = HT_PREPARE;
 
     d->loadTask(task.get(), in);
 
+    unsigned int begin = info->downloadMap.find(false, 0) * task->info->downloadMap.bytesPerBit();
+    unsigned int end   = info->downloadMap.find(true, begin) * task->info->downloadMap.bytesPerBit();
+
+    std::auto_ptr<HttpSession> ses( new HttpSession(task.get()) );
+    ses->pos = begin;
+    ses->length = end - begin;
+
+    ses->handle = curl_easy_init();
+    if (ses->handle == NULL)
+        throw DOWNLOADEXCEPTION(CURL_BAD_ALLOC, "CURL", strerror(CURL_BAD_ALLOC));
+
+    CURLcode rete = curl_easy_setopt(ses->handle, CURLOPT_URL, task->info->uri);
+    CHECK_CURLE(rete);
+
+    rete = curl_easy_setopt(ses->handle, CURLOPT_FILETIME, 1);
+    CHECK_CURLE(rete);
+
+    rete = curl_easy_setopt(ses->handle, CURLOPT_WRITEFUNCTION, writeCallback);
+    CHECK_CURLE(rete);
+
+    rete = curl_easy_setopt(ses->handle, CURLOPT_WRITEDATA, ses.get());
+    CHECK_CURLE(rete);
+
+    rete = curl_easy_setopt(ses->handle, CURLOPT_PRIVATE, ses.get());
+    CHECK_CURLE(rete);
+
+    if (task->info->totalSize > 0)
+    {
+        char range[64];
+        sprintf(range, "%u-%u", begin, end);
+        LOG(0, "resume task at %s\n", range);
+
+        rete = curl_easy_setopt(ses->handle, CURLOPT_RANGE, range);
+        CHECK_CURLE(rete);
+    }
+
+    CURLMcode retm = curl_multi_add_handle(d->handle, ses->handle);
+    if (retm != CURLM_OK)
+    {
+        throw DOWNLOADEXCEPTION(retm, "CURL", curl_multi_strerror(retm));
+    }
+    ++d->running;
+
+    d->tasks.insert(Tasks::value_type(info->id, task.get()));
+    task->sessions.push_back(ses.get());
+
     taskLog(info, "load task");
+
+    ses.release();
     task.release();
 }
 

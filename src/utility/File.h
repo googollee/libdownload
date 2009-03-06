@@ -36,6 +36,8 @@ template <typename T>
 class FileBase : private Noncopiable
 {
 public:
+    static void remove(const char *name);
+
     FileBase();
     FileBase(const char *name, int flag);
     ~FileBase();
@@ -78,6 +80,16 @@ inline File::FileBase<T>::~FileBase()
     if (isOpen())
     {
         close();
+    }
+}
+
+template <typename T>
+inline void File::FileBase<T>::remove(const char *name)
+{
+    if ( !T::remove(name) )
+    {
+        int err = T::getLastError();
+        DOWNLOADEXCEPTION(err, "File", T::strError(err));
     }
 }
 

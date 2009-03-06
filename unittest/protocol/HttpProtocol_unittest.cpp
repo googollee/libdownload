@@ -13,19 +13,7 @@ void ErrorCallback(TaskInfo *info, int error)
 
 void DownloadFinishCallback(TaskInfo *info)
 {
-    ProtocolBase *p = info->protocol;
-
-    printf("%s task %d download finished\n", p->name(), info->id);
-
-    std::ostringstream out;
-    p->saveTask(info->id, out);
-    std::string str = out.str();
-
-    std::cout << str << std::endl;
-    std::istringstream in(str);
-    TaskInfo *i = new TaskInfo;
-    i->id = 1;
-    p->loadTask(i, in);
+    printf("%s task %d download finished\n", info->protocol->name(), info->id);
 }
 
 void LogTaskInfoCallback(TaskInfo *info, const char *log)
@@ -57,6 +45,122 @@ TEST(HttpTest, NormalDownload)
         info->outputName = NULL;
 
         http.addTask(info);
+        info->state = DOWNLOAD;
+
+        while (http.perform() > 0)
+        {}
+
+        printf("download finish, total size = %lu\n", info->totalSize);
+        printf("download finish, download size = %lu\n", info->downloadSize);
+        printf("download map:\n");
+        for (size_t i=0; i<info->downloadMap.size(); ++i)
+        {
+            printf("%d", info->downloadMap.get(i));
+        }
+        printf("\n");
+
+        delete info;
+    }
+    catch (DownloadException &e)
+    {
+        printf("catch exception: %s:%u error %d in %s: %s\n",
+               e.file(), e.lineoff(),
+               e.error(), e.component(), e.what());
+    }
+}
+
+TEST(HttpTest, RemoveImmediately)
+{
+    try
+    {
+        HttpProtocol http;
+
+        http.taskError.connect(ErrorCallback);
+        http.downloadFinish.connect(DownloadFinishCallback);
+        http.taskLog.connect(LogTaskInfoCallback);
+        http.protocolLog.connect(LogProtocolInfoCallback);
+
+        TaskInfo *info = new TaskInfo;
+
+        info->id = 0;
+        info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
+        info->outputPath = "./";
+        info->outputName = NULL;
+
+        http.addTask(info);
+        info->state = DOWNLOAD;
+
+        http.removeTask(info->id);
+
+        delete info;
+    }
+    catch (DownloadException &e)
+    {
+        printf("catch exception: %s:%u error %d in %s: %s\n",
+               e.file(), e.lineoff(),
+               e.error(), e.component(), e.what());
+    }
+}
+
+TEST(HttpTest, SaveLoadDownload)
+{
+    std::string data;
+    HttpProtocol http;
+
+    http.taskError.connect(ErrorCallback);
+    http.downloadFinish.connect(DownloadFinishCallback);
+    http.taskLog.connect(LogTaskInfoCallback);
+    http.protocolLog.connect(LogProtocolInfoCallback);
+
+    try
+    {
+        TaskInfo *info = new TaskInfo;
+
+        info->id = 0;
+        info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
+        info->outputPath = "./";
+        info->outputName = NULL;
+
+        http.addTask(info);
+        info->state = DOWNLOAD;
+
+        int i = 0;
+        while (http.perform() > 0)
+        {
+            if (i>3) break;
+            if ( (info->totalSize > 0) &&
+                 (info->downloadMap.get(20)) )
+                ++i;
+        }
+
+        std::ostringstream out;
+        http.saveTask(info->id, out);
+        data = out.str();
+        printf("%s\n", data.c_str());
+
+        http.removeTask(info->id);
+
+        delete info;
+
+    }
+    catch (DownloadException &e)
+    {
+        printf("catch exception: %s:%u error %d in %s: %s\n",
+               e.file(), e.lineoff(),
+               e.error(), e.component(), e.what());
+    }
+
+    try
+    {
+        TaskInfo *info = new TaskInfo;
+
+        info->id = 0;
+        info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
+        info->outputPath = "./";
+        info->outputName = NULL;
+
+        std::istringstream in(data);
+        http.loadTask(info, in);
         info->state = DOWNLOAD;
 
         while (http.perform() > 0)

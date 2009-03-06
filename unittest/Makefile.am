@@ -27,8 +27,8 @@ BitMap_unittest_LDADD = gtest/lib/libgtest_main.la
 TESTS += File_unittest
 check_PROGRAMS += File_unittest
 File_unittest_SOURCES = utility/File_unittest.cpp
-File_unittest_CPPFLAGS = -I../src/ $(GLIB_CFLAGS)
-File_unittest_LDADD = gtest/lib/libgtest_main.la $(GLIB_LIBS)
+File_unittest_CPPFLAGS = -I../src/
+File_unittest_LDADD = gtest/lib/libgtest_main.la
 
 TESTS += SimpleXmlParser_unittest
 check_PROGRAMS += SimpleXmlParser_unittest

@@ -5,8 +5,6 @@
 
 #include <utility/Utility.h>
 
-#include <glib.h>
-
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -18,6 +16,8 @@ namespace filesystem
 class FilePosixApi : private Noncopiable
 {
 public:
+    static bool remove(const char *name);
+
     FilePosixApi();
 
     bool open(const char *name, int flag);
@@ -67,30 +67,35 @@ inline const char* FilePosixApi::strError(int error)
     return ::strerror(error);
 }
 
+inline bool FilePosixApi::remove(const char *name )
+{
+    return  (::remove(name) == 0);
+}
+
 inline FilePosixApi::FilePosixApi() :
     fd(-1)
 {}
 
-inline bool FilePosixApi::isOpen()
+inline bool FilePosixApi::open(const char *name, int flag)
 {
+//     GError *error = NULL;
+//     gchar *n = g_filename_from_utf8(name, -1, NULL, NULL, &error);
+//     if (n == NULL)
+//     {
+//         DOWNLOADEXCEPTION(error->code, "FilePosixApi", error->message);
+//     }
+#ifdef O_BINARY
+    fd = ::open(name, convOpenFlagToNative(flag) | O_BINARY , 0666);
+#else
+    fd = ::open(name, convOpenFlagToNative(flag), 0666);
+#endif
+//     g_free(n);
+
     return (fd != -1);
 }
 
-inline bool FilePosixApi::open(const char *name, int flag)
+inline bool FilePosixApi::isOpen()
 {
-    GError *error = NULL;
-    gchar *n = g_filename_from_utf8(name, -1, NULL, NULL, &error);
-    if (n == NULL)
-    {
-        DOWNLOADEXCEPTION(error->code, "FilePosixApi", error->message);
-    }
-#ifdef O_BINARY
-    fd = ::open(n, convOpenFlagToNative(flag) | O_BINARY , 0666);
-#else
-    fd = ::open(n, convOpenFlagToNative(flag), 0666);
-#endif
-    g_free(n);
-
     return (fd != -1);
 }
 
