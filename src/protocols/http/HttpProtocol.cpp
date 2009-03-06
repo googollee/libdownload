@@ -460,17 +460,6 @@ void HttpProtocolData::checkSession(HttpSession *ses)
 
     removeSession(ses);
 
-    size_t begin;
-    size_t len;
-    if (findNonDownload(task, &begin, &len))
-    {
-        makeSession(task, begin, len);
-    }
-    else
-    {
-        splitMaxSession(task);
-    }
-
     if (task->sessions.size() == 0)
     {
         LOG(0, "task %d finish\n", task->info->id);
@@ -480,6 +469,19 @@ void HttpProtocolData::checkSession(HttpSession *ses)
 
         if (p->hasTask(id))
             p->removeTask(id);
+
+        return;
+    }
+
+    size_t begin;
+    size_t len;
+    if (findNonDownload(task, &begin, &len))
+    {
+        makeSession(task, begin, len);
+    }
+    else
+    {
+        splitMaxSession(task);
     }
 }
 

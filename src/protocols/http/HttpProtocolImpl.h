@@ -11,7 +11,7 @@
 #include <string>
 
 static int DefaultSessionNumber = 5;
-static int DefaultMinSessionBlocks = 200;
+static int DefaultMinSessionBlocks = 100;
 static int DefaultBytesPerBlock = 512;
 
 struct HttpProtocolData;

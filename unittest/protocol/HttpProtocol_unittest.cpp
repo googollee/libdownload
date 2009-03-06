@@ -17,15 +17,15 @@ void DownloadFinishCallback(TaskInfo *info)
 
     printf("%s task %d download finished\n", p->name(), info->id);
 
-//     std::ostringstream out;
-//     p->saveTask(info->id, out);
-//     std::string str = out.str();
+    std::ostringstream out;
+    p->saveTask(info->id, out);
+    std::string str = out.str();
 
-//     std::cout << str << std::endl;
-//     std::istringstream in(str);
-//     TaskInfo *i = new TaskInfo;
-//     i->id = 1;
-//     p->loadTask(i, in);
+    std::cout << str << std::endl;
+    std::istringstream in(str);
+    TaskInfo *i = new TaskInfo;
+    i->id = 1;
+    p->loadTask(i, in);
 }
 
 void LogTaskInfoCallback(TaskInfo *info, const char *log)
