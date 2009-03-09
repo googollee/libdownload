@@ -26,6 +26,21 @@ void LogProtocolInfoCallback(ProtocolBase *p, const char *log)
     printf("%s: %s\n", p->name(), log);
 }
 
+TEST(HttpTest, SetGetGlobalConf)
+{
+    HttpProtocol http;
+
+    size_t value = 0;
+    http.control(CF_SET, "SessionNumber", &value);
+    http.control(CF_GET, "SessionNumber", &value);
+    EXPECT_TRUE(value > 0);
+
+    value = 100;
+    http.control(CF_SET, "SessionNumber", &value);
+    http.control(CF_GET, "SessionNumber", &value);
+    EXPECT_EQ(value, 100u);
+}
+
 TEST(HttpTest, NormalDownload)
 {
     try

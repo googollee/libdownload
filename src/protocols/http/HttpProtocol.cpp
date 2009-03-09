@@ -165,48 +165,48 @@ private:
             std::string data(text, textLen);
             if (strcmp(getElement(), "SessionNumber") == 0)
             {
-                task_->conf.sessionNumber = atoi(data.c_str());
+                conf.sessionNumber = atoi(data.c_str());
             }
             else if (strcmp(getElement(), "MinSessionBlocks") == 0)
             {
-                task_->conf.minSessionBlocks = atoi(data.c_str());
+                conf.minSessionBlocks = atoi(data.c_str());
             }
             else if (strcmp(getElement(), "BytesPerBlock") == 0)
             {
-                task_->conf.bytesPerBlock = atoi(data.c_str());
+                conf.bytesPerBlock = atoi(data.c_str());
             }
             else if (strcmp(getElement(), "TotalSize") == 0)
             {
-                task_->info->totalSize = atoi(data.c_str());
+                totalSize = atoi(data.c_str());
             }
             else if (strcmp(getElement(), "BitMap") == 0)
             {
-                task_->info->downloadMap = BitMap(task_->info->totalSize, task_->conf.bytesPerBlock);
+                downloadMap = BitMap(totalSize, conf.bytesPerBlock);
                 size_t finishSize = 0;
                 for (int i=0, n=data.length()-1; i<n; ++i)
                 {
                     if (data[i] == '1')
                     {
-                        task_->info->downloadMap.set(i, true);
-                        finishSize += task_->conf.bytesPerBlock;
+                        downloadMap.set(i, true);
+                        finishSize += conf.bytesPerBlock;
                     }
                     else
                     {
-                        task_->info->downloadMap.set(i, false);
+                        downloadMap.set(i, false);
                     }
                 }
                 int i = data.length() - 1;
                 if (data[i] == '1')
                 {
                     // need calculate last block seperately.
-                    task_->info->downloadMap.set(i, true);
-                    finishSize += task_->info->totalSize - (i * task_->conf.bytesPerBlock);
+                    downloadMap.set(i, true);
+                    finishSize += totalSize - (i * conf.bytesPerBlock);
                 }
                 else
                 {
-                    task_->info->downloadMap.set(i, false);
+                    downloadMap.set(i, false);
                 }
-                task_->info->downloadSize = finishSize;
+                downloadSize = finishSize;
             }
             else
             {
@@ -217,11 +217,13 @@ private:
     HttpTask *task_;
 
 public:
-    HttpConfXmlParser(HttpTask *task)
-        : task_(task)
+    HttpConfXmlParser()
         {}
 
-    std::ostringstream out;
+    HttpConfigure conf;
+    size_t totalSize;
+    size_t downloadSize;
+    BitMap downloadMap;
 };
 
 void HttpProtocolData::initTask(HttpTask *task)
@@ -379,7 +381,8 @@ void HttpProtocolData::loadTask(HttpTask *task, std::istream &in)
 {
     LOG(0, "enter loadTask, task = %p\n", task);
 
-    HttpConfXmlParser parser(task);
+    TaskInfo *info = task->info;
+    HttpConfXmlParser parser;
 
     char buffer[1024];
     int size = 0;
@@ -394,7 +397,11 @@ void HttpProtocolData::loadTask(HttpTask *task, std::istream &in)
     }
     parser.finish();
 
-    TaskInfo *info = task->info;
+    task->conf = parser.conf;
+    info->totalSize = parser.totalSize;
+    info->downloadSize = parser.downloadSize;
+    info->downloadMap = parser.downloadMap;
+
     printf("download finish, total size = %lu\n", info->totalSize);
     printf("download finish, download size = %lu\n", info->downloadSize);
     printf("download map:\n");
@@ -723,7 +730,27 @@ bool HttpProtocol::canProcess(const char *uri)
 
 void HttpProtocol::loadOptions(std::istream &in)
 {
-    throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
+    HttpConfXmlParser parser;
+
+    char buffer[1024];
+    int size = 0;
+    while ( (size = in.readsome(buffer, 1024)) > 0 )
+    {
+        parser.feed(buffer, size);
+
+        if (parser.getError(NULL) != NULL)
+        {
+            break;
+        }
+    }
+    parser.finish();
+
+    if (parser.conf.sessionNumber > 0)
+        HttpConfigure::DefaultSessionNumber = parser.conf.sessionNumber;
+    if (parser.conf.minSessionBlocks > 0)
+        HttpConfigure::DefaultMinSessionBlocks = parser.conf.minSessionBlocks;
+    if (parser.conf.bytesPerBlock > 0)
+        HttpConfigure::DefaultBytesPerBlock = parser.conf.bytesPerBlock;
 }
 
 void HttpProtocol::saveOptions(std::ostream &out)
@@ -739,11 +766,49 @@ void HttpProtocol::saveOptions(std::ostream &out)
         % defaultConf.bytesPerBlock;
 }
 
-const char* HttpProtocol::control(const char *cmd)
+void HttpProtocol::control(ControlFlag f, const char *key, void *value)
 {
-    throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
+    LOG(0, "enter control, f = %d, key = %p, value = %p\n", f, key, value);
 
-    return NULL;
+    if (key == NULL)
+    {
+        LOG(0, "key is NULL\n");
+        return;
+    }
+    if (value == NULL)
+    {
+        LOG(0, "value is NULL\n");
+        return;
+    }
+
+    size_t *s = static_cast<size_t*>(value);
+    if ( (f == CF_SET) && (*s == 0) )
+    {
+        LOG(0, "value need be great than 0.\n");
+        return;
+    }
+
+    if (strcmp(key, "SessionNumber") == 0)
+    {
+        if (f == CF_GET)
+            *s = HttpConfigure::DefaultSessionNumber;
+        else if (f == CF_SET)
+            HttpConfigure::DefaultSessionNumber = *s;
+    }
+    else if (strcmp(key, "MinSessionBlocks") == 0)
+    {
+        if (f == CF_GET)
+            *s = HttpConfigure::DefaultMinSessionBlocks;
+        else if (f == CF_SET)
+            HttpConfigure::DefaultMinSessionBlocks = *s;
+    }
+    else if (strcmp(key, "BytesPerBlock") == 0)
+    {
+        if (f == CF_GET)
+            *s = HttpConfigure::DefaultBytesPerBlock;
+        else if (f == CF_SET)
+            HttpConfigure::DefaultBytesPerBlock = *s;
+    }
 }
 
 const char* HttpProtocol::getAllOptions()
@@ -941,13 +1006,10 @@ void HttpProtocol::saveTask(const TaskId id, std::ostream &out)
     d->saveTask(it, out);
 }
 
-const char* HttpProtocol::controlTask(const TaskId id, const char *cmd)
+void HttpProtocol::controlTask(const TaskId id, ControlFlag f, const char *cmd, void *value)
 {
     LOG(0, "enter controlTask, id = %u\n", id);
-
-    throw DOWNLOADEXCEPTION(1, "HTTP", "not implement");
-
-    return NULL;
+    LOG(0, "no control when http protocol working.");
 }
 
 void HttpProtocol::getFdSet(fd_set *read_fd_set,

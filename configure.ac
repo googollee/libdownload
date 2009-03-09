@@ -65,6 +65,9 @@ AC_FUNC_STRERROR_R
 AC_CHECK_FUNCS([dup2 getcwd getpagesize gettimeofday memset mkdir munmap regcomp strcasecmp strchr strdup strerror strrchr strstr strtol])
 
 AC_CONFIG_FILES([Makefile
+                 src/Makefile
+                 src/utility/Makefile
+                 src/protocols/Makefile
                  unittest/Makefile
                  unittest/gtest/Makefile])
 AC_OUTPUT

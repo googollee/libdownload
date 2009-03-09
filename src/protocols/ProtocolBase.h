@@ -38,6 +38,12 @@
 
 #endif // defined(WIN32) && !defined(_WIN32_WCE) && .. || defined(__MINGW32__)
 
+enum ControlFlag
+{
+    CF_SET,
+    CF_GET,
+};
+
 class ProtocolBase
 {
 public:
@@ -89,18 +95,11 @@ public:
 
     // Control the protocol property.
     // cmd format, e.g.:
-    // <set>
-    //   <MaxConnection>10</MaxConnection>
-    // </set>
-    // or,
-    // <remove>
-    //   <ip>42.567.34.2</ip>
-    // </remove>
-    // or,
-    // <get>MaxConnection</get> and return <MaxConnection>5</MaxConnection>
+    // f = CF_SET, key = "SessionNumber", value point to a size_t variable.
+    // HttpProtocol will save session number per task in value.
     //
     // no standard command now.
-    virtual const char* control(const char* cmd) = 0;
+    virtual void control(ControlFlag f, const char* key, void *value) = 0;
 
     // Task control
     // this options is session related
@@ -108,7 +107,7 @@ public:
     virtual void addTask(TaskInfo *info) = 0;
     virtual void removeTask(const TaskId id) = 0;
     virtual bool hasTask(const TaskId id) = 0;
-    virtual const char *controlTask(const TaskId id, const char *cmd) = 0;
+    virtual void controlTask(const TaskId id, ControlFlag f, const char* key, void *value) = 0;
 
     // Save and load
     // load must be end before "</data>"

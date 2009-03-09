@@ -10,10 +10,6 @@
 #include <vector>
 #include <string>
 
-static int DefaultSessionNumber = 5;
-static int DefaultMinSessionBlocks = 100;
-static int DefaultBytesPerBlock = 512;
-
 struct HttpProtocolData;
 struct HttpTask;
 struct HttpSession;
@@ -23,6 +19,10 @@ typedef std::vector<HttpSession*> Sessions;
 
 struct HttpConfigure
 {
+    static int DefaultSessionNumber;
+    static int DefaultMinSessionBlocks;
+    static int DefaultBytesPerBlock;
+
     int sessionNumber;
     int minSessionBlocks;
     int bytesPerBlock;
@@ -33,6 +33,10 @@ struct HttpConfigure
           bytesPerBlock(DefaultBytesPerBlock)
         {}
 };
+
+int HttpConfigure::DefaultSessionNumber = 5;
+int HttpConfigure::DefaultMinSessionBlocks = 100;
+int HttpConfigure::DefaultBytesPerBlock = 512;
 
 enum HttpTaskState
 {

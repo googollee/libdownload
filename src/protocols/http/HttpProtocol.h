@@ -20,12 +20,12 @@ public:
     virtual void saveOptions(std::ostream &out);
 
     virtual const char* getAllOptions();
-    virtual const char* control(const char* cmd);
+    virtual void control(ControlFlag f, const char* key, void *value);
 
     virtual void addTask(TaskInfo *info);
     virtual void removeTask(const TaskId id);
     virtual bool hasTask(const TaskId id);
-    virtual const char *controlTask(const TaskId id, const char *cmd);
+    virtual void controlTask(const TaskId id, ControlFlag f, const char* key, void *value);
 
     virtual void loadTask(TaskInfo *info, std::istream &in);
     virtual void saveTask(const TaskId id, std::ostream &out);
