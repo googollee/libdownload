@@ -48,7 +48,10 @@ TEST(HttpTest, NormalDownload)
         info->state = DOWNLOAD;
 
         while (http.perform() > 0)
-        {}
+        {
+            if (info->totalSize > 0)
+                printf("progress: %lu%%\r", info->downloadSize * 100 / info->totalSize);
+        }
 
         printf("download finish, total size = %lu\n", info->totalSize);
         printf("download finish, download size = %lu\n", info->downloadSize);

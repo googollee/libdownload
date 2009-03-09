@@ -37,7 +37,7 @@ SimpleXmlParser_unittest_SOURCES = utility/SimpleXmlParser_unittest.cpp \
 SimpleXmlParser_unittest_CPPFLAGS = -I../src/ $(GLIB_CFLAGS)
 SimpleXmlParser_unittest_LDADD = gtest/lib/libgtest_main.la $(GLIB_LIBS)
 
-TESTS += HttpProtocol_unittest
+TESTS += protocol/HttpProtocol_unittest.sh
 check_PROGRAMS += HttpProtocol_unittest
 HttpProtocol_unittest_SOURCES = protocol/HttpProtocol_unittest.cpp \
 	                            ../src/utility/SimpleXmlParser.h ../src/utility/SimpleXmlParser.cpp \
