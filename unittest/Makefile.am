@@ -7,6 +7,8 @@ AM_CXXFLAGS = -g -O0 -Wall -D_DEBUG -Igtest/$(srcdir) -Igtest/$(srcdir)/include
 
 SUBDIRS = gtest
 
+INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src/
+
 # Bulid rules for samples and tests. Automake's naming for some of
 # these variables isn't terribly obvious, so this is a brief
 # reference:
@@ -20,28 +22,37 @@ check_PROGRAMS =
 TESTS += BitMap_unittest
 check_PROGRAMS += BitMap_unittest
 BitMap_unittest_SOURCES = utility/BitMap_unittest.cpp
-BitMap_unittest_CPPFLAGS = -I../src/
-BitMap_unittest_LDADD = gtest/lib/libgtest_main.la \
-    ../src/utility/libutility.a
+BitMap_unittest_CPPFLAGS =
+BitMap_unittest_LDADD = \
+    gtest/lib/libgtest_main.la \
+    $(top_srcdir)/src/utility/libutility.la
 
 TESTS += File_unittest
 check_PROGRAMS += File_unittest
 File_unittest_SOURCES = utility/File_unittest.cpp
-File_unittest_CPPFLAGS = -I../src/
-File_unittest_LDADD = gtest/lib/libgtest_main.la \
-    ../src/utility/libutility.a
+File_unittest_CPPFLAGS =
+File_unittest_LDADD = \
+    gtest/lib/libgtest_main.la \
+    $(top_srcdir)/src/utility/libutility.la
 
 TESTS += SimpleXmlParser_unittest
 check_PROGRAMS += SimpleXmlParser_unittest
 SimpleXmlParser_unittest_SOURCES = utility/SimpleXmlParser_unittest.cpp
-SimpleXmlParser_unittest_CPPFLAGS = -I../src/ $(GLIB_CFLAGS)
-SimpleXmlParser_unittest_LDADD = gtest/lib/libgtest_main.la \
-    $(GLIB_LIBS) ../src/utility/libutility.a
+SimpleXmlParser_unittest_CPPFLAGS = $(GLIB_CFLAGS)
+SimpleXmlParser_unittest_LDADD = \
+    $(GLIB_LIBS) \
+    gtest/lib/libgtest_main.la \
+    $(top_srcdir)/src/utility/libutility.la
 
 TESTS += protocol/HttpProtocol_unittest.sh
 check_PROGRAMS += HttpProtocol_unittest
 HttpProtocol_unittest_SOURCES = protocol/HttpProtocol_unittest.cpp
-HttpProtocol_unittest_CPPFLAGS = -I../src/ ${LIBCURL_CPPFLAGS} ${BOOST_CPPFLAGS} $(GLIB_CFLAGS)
-HttpProtocol_unittest_LDADD = gtest/lib/libgtest_main.la \
-    ${LIBCURL_LIBS} ${BOOST_LDFLAGS} ${BOOST_SIGNALS_LIB} $(GLIB_LIBS) \
-    ../src/protocols/libprotocols.a ../src/utility/libutility.a
+HttpProtocol_unittest_CPPFLAGS = ${LIBCURL_CPPFLAGS} ${BOOST_CPPFLAGS} $(GLIB_CFLAGS)
+HttpProtocol_unittest_LDADD = \
+    ${LIBCURL_LIBS} \
+    ${BOOST_LDFLAGS} \
+    ${BOOST_SIGNALS_LIB} \
+    $(GLIB_LIBS) \
+    gtest/lib/libgtest_main.la \
+    $(top_srcdir)/src/protocols/libprotocols.la \
+    $(top_srcdir)/src/utility/libutility.la

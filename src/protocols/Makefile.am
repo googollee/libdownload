@@ -1,6 +1,11 @@
-lib_LIBRARIES = libprotocols.a
+noinst_LTLIBRARIES = libprotocols.la
 
-libprotocols_a_SOURCES = \
+libprotocols_la_SOURCES = \
     ProtocolBase.h \
-    http/HttpProtocol.h http/HttpProtocolImpl.h http/HttpProtocol.cpp
-libprotocols_a_CPPFLAGS = -I../ ${BOOST_CPPFLAGS}
+    HttpProtocol.h \
+    HttpProtocolImpl.h \
+    HttpProtocol.cpp
+
+INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src/
+
+libprotocols_la_CPPFLAGS = ${BOOST_CPPFLAGS}

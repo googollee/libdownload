@@ -1,7 +1,7 @@
 #ifndef HTTP_PROTOCOL_HEADER
 #define HTTP_PROTOCOL_HEADER
 
-#include "../ProtocolBase.h"
+#include "ProtocolBase.h"
 
 #include <memory>
 

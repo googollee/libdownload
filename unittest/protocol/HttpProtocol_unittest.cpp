@@ -1,4 +1,4 @@
-#include "protocols/http/HttpProtocol.h"
+#include "protocols/HttpProtocol.h"
 
 #include <utility/DownloadException.h>
 
@@ -41,6 +41,84 @@ TEST(HttpTest, SetGetGlobalConf)
     EXPECT_EQ(value, 100u);
 }
 
+TEST(HttpTest, AddTask)
+{
+    try
+    {
+        HttpProtocol http;
+
+        http.taskError.connect(ErrorCallback);
+        http.downloadFinish.connect(DownloadFinishCallback);
+        http.taskLog.connect(LogTaskInfoCallback);
+        http.protocolLog.connect(LogProtocolInfoCallback);
+
+        TaskInfo *info = new TaskInfo;
+
+        info->id = 0;
+        info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
+        info->outputPath = "./";
+        info->outputName = NULL;
+
+        http.addTask(info);
+        info->state = DOWNLOAD;
+
+        http.removeTask(info->id);
+
+        delete info;
+    }
+    catch (DownloadException &e)
+    {
+        printf("catch exception: %s:%u error %d in %s: %s\n",
+               e.file(), e.lineoff(),
+               e.error(), e.component(), e.what());
+    }
+}
+
+TEST(HttpTest, AddTaskWithOptions)
+{
+    try
+    {
+        HttpProtocol http;
+
+        http.taskError.connect(ErrorCallback);
+        http.downloadFinish.connect(DownloadFinishCallback);
+        http.taskLog.connect(LogTaskInfoCallback);
+        http.protocolLog.connect(LogProtocolInfoCallback);
+
+        TaskInfo *info = new TaskInfo;
+
+        info->id = 0;
+        info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
+        info->outputPath = "./";
+        info->outputName = NULL;
+        info->options = "<SessionNumber>100</SessionNumber>\n"
+            "<BytesPerBlock>1024</BytesPerBlock>"
+            "<MinSessionBlocks>200</MinSessionBlocks>\n";
+
+        http.addTask(info);
+
+        std::ostringstream out;
+        http.saveTask(info->id, out);
+        std::string data = out.str();
+        EXPECT_EQ(data,
+                  "<SessionNumber>100</SessionNumber>\n"
+                  "<MinSessionBlocks>200</MinSessionBlocks>\n"
+                  "<BytesPerBlock>1024</BytesPerBlock>\n"
+                  "<TotalSize>0</TotalSize>\n"
+                  "<BitMap></BitMap>");
+
+        http.removeTask(info->id);
+
+        delete info;
+    }
+    catch (DownloadException &e)
+    {
+        printf("catch exception: %s:%u error %d in %s: %s\n",
+               e.file(), e.lineoff(),
+               e.error(), e.component(), e.what());
+    }
+}
+
 TEST(HttpTest, NormalDownload)
 {
     try
@@ -65,7 +143,11 @@ TEST(HttpTest, NormalDownload)
         while (http.perform() > 0)
         {
             if (info->totalSize > 0)
-                printf("progress: %lu%%\r", info->downloadSize * 100 / info->totalSize);
+                printf("progress: %lu%%, %d/%d\r",
+                       info->downloadSize * 100 / info->totalSize,
+                       info->validSource,
+                       info->totalSource
+                    );
         }
 
         printf("download finish, total size = %lu\n", info->totalSize);
@@ -76,39 +158,6 @@ TEST(HttpTest, NormalDownload)
             printf("%d", info->downloadMap.get(i));
         }
         printf("\n");
-
-        delete info;
-    }
-    catch (DownloadException &e)
-    {
-        printf("catch exception: %s:%u error %d in %s: %s\n",
-               e.file(), e.lineoff(),
-               e.error(), e.component(), e.what());
-    }
-}
-
-TEST(HttpTest, RemoveImmediately)
-{
-    try
-    {
-        HttpProtocol http;
-
-        http.taskError.connect(ErrorCallback);
-        http.downloadFinish.connect(DownloadFinishCallback);
-        http.taskLog.connect(LogTaskInfoCallback);
-        http.protocolLog.connect(LogProtocolInfoCallback);
-
-        TaskInfo *info = new TaskInfo;
-
-        info->id = 0;
-        info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
-        info->outputPath = "./";
-        info->outputName = NULL;
-
-        http.addTask(info);
-        info->state = DOWNLOAD;
-
-        http.removeTask(info->id);
 
         delete info;
     }
@@ -145,6 +194,12 @@ TEST(HttpTest, SaveLoadDownload)
         int i = 0;
         while (http.perform() > 0)
         {
+            if (info->totalSize > 0)
+                printf("progress: %lu%%, %d/%d\r",
+                       info->downloadSize * 100 / info->totalSize,
+                       info->validSource,
+                       info->totalSource
+                    );
             if (i>3) break;
             if ( (info->totalSize > 0) &&
                  (info->downloadMap.get(20)) )
@@ -182,7 +237,14 @@ TEST(HttpTest, SaveLoadDownload)
         info->state = DOWNLOAD;
 
         while (http.perform() > 0)
-        {}
+        {
+            if (info->totalSize > 0)
+                printf("progress: %lu%%, %d/%d\r",
+                       info->downloadSize * 100 / info->totalSize,
+                       info->validSource,
+                       info->totalSource
+                    );
+        }
 
         printf("download finish, total size = %lu\n", info->totalSize);
         printf("download finish, download size = %lu\n", info->downloadSize);

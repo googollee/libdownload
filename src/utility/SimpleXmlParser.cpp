@@ -96,6 +96,11 @@ bool SimpleXmlParser::feed(const char *str, int len)
     return g_markup_parse_context_parse(d->context, str, len, &d->error) == TRUE;
 }
 
+bool SimpleXmlParser::feed(const char *str)
+{
+    return feed(str, -1);
+}
+
 bool SimpleXmlParser::finish()
 {
     return g_markup_parse_context_end_parse(d->context, &d->error) == TRUE;

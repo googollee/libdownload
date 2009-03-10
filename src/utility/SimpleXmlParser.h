@@ -38,6 +38,7 @@ public:
     virtual ~SimpleXmlParser();
 
     bool feed(const char *str, int len);
+    bool feed(const char *str);
     bool finish();
 
     const char* getElement();

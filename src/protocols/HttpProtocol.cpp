@@ -271,6 +271,7 @@ void HttpProtocolData::initTask(HttpTask *task)
         }
     }
 
+    info->totalSource = info->validSource = 1;
     if ( (info->totalSize > 0) && (task->conf.sessionNumber > 1) )
     {
         LOG(0, "make download sessions\n");
@@ -852,9 +853,24 @@ void HttpProtocol::addTask(TaskInfo *info)
     std::auto_ptr<HttpTask> task( new HttpTask(d.get()) );
     task->state = HT_PREPARE;
     task->info = info;
-    task->info->protocol = this;
-    task->info->downloadSize = 0;
-    task->info->totalSource = task->info->validSource = 0;
+    info->protocol = this;
+    info->downloadSize = 0;
+    info->totalSource = info->validSource = 0;
+    if (info->options != NULL)
+    {
+        HttpConfXmlParser parser;
+        parser.feed(info->options);
+        parser.finish();
+        if (parser.getError(NULL) == NULL)
+        {
+            if (parser.conf.sessionNumber > 0)
+                task->conf.sessionNumber = parser.conf.sessionNumber;
+            if (parser.conf.minSessionBlocks > 0)
+                task->conf.minSessionBlocks = parser.conf.minSessionBlocks;
+            if (parser.conf.bytesPerBlock > 0)
+                task->conf.bytesPerBlock = parser.conf.bytesPerBlock;
+        }
+    }
 
     taskLog(task->info, "Add task, initialize");
 
