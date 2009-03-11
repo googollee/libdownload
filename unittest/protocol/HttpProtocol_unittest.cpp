@@ -26,6 +26,12 @@ void LogProtocolInfoCallback(ProtocolBase *p, const char *log)
     printf("%s: %s\n", p->name(), log);
 }
 
+TEST(HttpTest, CanProcessTest)
+{
+    HttpProtocol http;
+    EXPECT_EQ(http.canProcess("http://xxx"), true);
+}
+
 TEST(HttpTest, SetGetGlobalConf)
 {
     HttpProtocol http;

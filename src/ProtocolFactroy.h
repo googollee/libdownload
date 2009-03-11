@@ -1,7 +1,10 @@
 #ifndef PROTOCOL_FACTORY_HEADER
 #define PROTOCOL_FACTORY_HEADER
 
-#include "../Global.h"
+#include "Global.h"
+
+#include <protocols/ProtocolBase.h>
+#include <utility/Utility.h>
 
 #include <string.h>
 
@@ -10,7 +13,7 @@
 #include <functional>
 #include <algorithm>
 
-class ProtocolFactory
+class ProtocolFactory : public Noncopiable
 {
 public:
     typedef std::vector<ProtocolBase*> Protocols;
@@ -25,9 +28,6 @@ private:
     ProtocolFactory();
 
     Protocols protocols_;
-
-    ProtocolFactory(const ProtocolFactory &);
-    const ProtocolFactory &operator()(const ProtocolFactory &);
 };
 
 inline ProtocolFactory& ProtocolFactory::instance()
