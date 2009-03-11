@@ -40,19 +40,19 @@ check_PROGRAMS += SimpleXmlParser_unittest
 SimpleXmlParser_unittest_SOURCES = utility/SimpleXmlParser_unittest.cpp
 SimpleXmlParser_unittest_CPPFLAGS = $(GLIB_CFLAGS)
 SimpleXmlParser_unittest_LDADD = \
-    $(GLIB_LIBS) \
     gtest/lib/libgtest_main.la \
-    $(top_srcdir)/src/utility/libutility.la
+    $(top_srcdir)/src/utility/libutility.la \
+    $(GLIB_LIBS)
 
 TESTS += protocol/HttpProtocol_unittest.sh
 check_PROGRAMS += HttpProtocol_unittest
 HttpProtocol_unittest_SOURCES = protocol/HttpProtocol_unittest.cpp
 HttpProtocol_unittest_CPPFLAGS = ${LIBCURL_CPPFLAGS} ${BOOST_CPPFLAGS} $(GLIB_CFLAGS)
 HttpProtocol_unittest_LDADD = \
+    gtest/lib/libgtest_main.la \
+    $(top_srcdir)/src/protocols/libprotocols.la \
+    $(top_srcdir)/src/utility/libutility.la \
     ${LIBCURL_LIBS} \
     ${BOOST_LDFLAGS} \
     ${BOOST_SIGNALS_LIB} \
-    $(GLIB_LIBS) \
-    gtest/lib/libgtest_main.la \
-    $(top_srcdir)/src/protocols/libprotocols.la \
-    $(top_srcdir)/src/utility/libutility.la
+    $(GLIB_LIBS)
