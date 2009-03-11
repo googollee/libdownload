@@ -21,17 +21,17 @@ struct TaskInfo
 {
     TaskId id;
 
-    char *uri;
-    char *outputPath;
-    char *outputName;
+    std::string uri;
+    std::string outputPath;
+    std::string outputName;
 
     // Options is a string like:
     // <key1>value1</key1>
     // <key2>value2</key2>
     //...
-    char *options;
+    std::string options;
 
-    char *comment;
+    std::string comment;
 
     // no need save below
     size_t totalSize;
@@ -49,11 +49,6 @@ struct TaskInfo
 
     TaskInfo()
         : id(0),
-          uri(NULL),
-          outputPath(NULL),
-          outputName(NULL),
-          options(NULL),
-          comment(NULL),
           totalSize(0),
           downloadSize(0),
           uploadSize(0),

@@ -63,7 +63,7 @@ TEST(HttpTest, AddTask)
         info->id = 0;
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
-        info->outputName = NULL;
+        info->outputName = "";
 
         http.addTask(info);
         info->state = DOWNLOAD;
@@ -96,7 +96,7 @@ TEST(HttpTest, AddTaskWithOptions)
         info->id = 0;
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
-        info->outputName = NULL;
+        info->outputName = "";
         info->options = "<SessionNumber>100</SessionNumber>\n"
             "<BytesPerBlock>1024</BytesPerBlock>"
             "<MinSessionBlocks>200</MinSessionBlocks>\n";
@@ -141,7 +141,7 @@ TEST(HttpTest, NormalDownload)
         info->id = 0;
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
-        info->outputName = NULL;
+        info->outputName = "";
 
         http.addTask(info);
         info->state = DOWNLOAD;
@@ -192,7 +192,7 @@ TEST(HttpTest, SaveLoadDownload)
         info->id = 0;
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
-        info->outputName = NULL;
+        info->outputName = "";
 
         http.addTask(info);
         info->state = DOWNLOAD;
@@ -236,7 +236,7 @@ TEST(HttpTest, SaveLoadDownload)
         info->id = 0;
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
-        info->outputName = NULL;
+        info->outputName = "";
 
         std::istringstream in(data);
         http.loadTask(info, in);

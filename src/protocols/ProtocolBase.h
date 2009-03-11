@@ -1,7 +1,8 @@
 #ifndef PROTOCOL_BASE_HEADER
 #define PROTOCOL_BASE_HEADER
 
-#include "../Global.h"
+#include "Global.h"
+#include "utility/Utility.h"
 
 #include <boost/signals.hpp>
 
@@ -44,7 +45,7 @@ enum ControlFlag
     CF_GET,
 };
 
-class ProtocolBase
+class ProtocolBase : private Noncopiable
 {
 public:
     // when task download finish, call for noticing manager.

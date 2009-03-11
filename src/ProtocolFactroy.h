@@ -13,7 +13,7 @@
 #include <functional>
 #include <algorithm>
 
-class ProtocolFactory : public Noncopiable
+class ProtocolFactory : private Noncopiable
 {
 public:
     typedef std::vector<ProtocolBase*> Protocols;

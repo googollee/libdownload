@@ -113,32 +113,8 @@ size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession *ses)
 
 void getFileName(CURL *handle, HttpTask *task)
 {
-    const char *p = task->info->uri + strlen(task->info->uri);
-    bool findNonNameChar = false;
-    do
-    {
-        --p;
-        switch (*p)
-        {
-        case '*':
-        case '|':
-        case '\\':
-        case ':':
-        case '"':
-        case '<':
-        case '>':
-        case '?':
-        case '/':
-            findNonNameChar = true;
-            break;
-        }
-    } while ( !findNonNameChar && (p >= task->info->uri) );
-    ++p;
-
-    if (task->info->outputName != NULL)
-        delete [] task->info->outputName;
-
-    task->info->outputName = strdup(p);
+    size_t p = task->info->uri.find_last_of("*|\\:\"<>?/") + 1;
+    task->info->outputName = task->info->uri.substr(p);
 }
 
 class HttpConfXmlParser : public SimpleXmlParser
@@ -237,7 +213,7 @@ void HttpProtocolData::initTask(HttpTask *task)
     // get file information.
     char logBuffer[64] = {0};
     double length;
-    if ( (info->outputName == NULL) || (info->outputName[0] == '\0') )
+    if (info->outputName.length() == 0)
         getFileName(ehandle, task);
     std::string output = info->outputPath;
     output.append(info->outputName);
@@ -588,7 +564,7 @@ void HttpProtocolData::makeSession(HttpTask *task, size_t begin, size_t len)
     if (ses->handle == NULL)
         throw DOWNLOADEXCEPTION(CURL_BAD_ALLOC, "CURL", strerror(CURL_BAD_ALLOC));
 
-    CURLcode rete = curl_easy_setopt(ses->handle, CURLOPT_URL, task->info->uri);
+    CURLcode rete = curl_easy_setopt(ses->handle, CURLOPT_URL, task->info->uri.c_str());
 
     rete = curl_easy_setopt(ses->handle, CURLOPT_WRITEFUNCTION, writeCallback);
     CHECK_CURLE(rete);
@@ -856,10 +832,10 @@ void HttpProtocol::addTask(TaskInfo *info)
     info->protocol = this;
     info->downloadSize = 0;
     info->totalSource = info->validSource = 0;
-    if (info->options != NULL)
+    if (info->options.length() != 0)
     {
         HttpConfXmlParser parser;
-        parser.feed(info->options);
+        parser.feed(info->options.c_str());
         parser.finish();
         if (parser.getError(NULL) == NULL)
         {
@@ -880,7 +856,7 @@ void HttpProtocol::addTask(TaskInfo *info)
     if (ses->handle == NULL)
         throw DOWNLOADEXCEPTION(CURL_BAD_ALLOC, "CURL", strerror(CURL_BAD_ALLOC));
 
-    CURLcode rete = curl_easy_setopt(ses->handle, CURLOPT_URL, task->info->uri);
+    CURLcode rete = curl_easy_setopt(ses->handle, CURLOPT_URL, task->info->uri.c_str());
     CHECK_CURLE(rete);
 
     rete = curl_easy_setopt(ses->handle, CURLOPT_FILETIME, 1);
@@ -964,7 +940,7 @@ void HttpProtocol::loadTask(TaskInfo *info, std::istream &in)
     if (ses->handle == NULL)
         throw DOWNLOADEXCEPTION(CURL_BAD_ALLOC, "CURL", strerror(CURL_BAD_ALLOC));
 
-    CURLcode rete = curl_easy_setopt(ses->handle, CURLOPT_URL, task->info->uri);
+    CURLcode rete = curl_easy_setopt(ses->handle, CURLOPT_URL, task->info->uri.c_str());
     CHECK_CURLE(rete);
 
     rete = curl_easy_setopt(ses->handle, CURLOPT_FILETIME, 1);
