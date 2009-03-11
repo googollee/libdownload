@@ -705,6 +705,11 @@ bool HttpProtocol::canProcess(const char *uri)
     return true;
 }
 
+const char* HttpProtocol::getTaskOptions(const char *uri)
+{
+    return getAllOptions();
+}
+
 void HttpProtocol::loadOptions(std::istream &in)
 {
     HttpConfXmlParser parser;

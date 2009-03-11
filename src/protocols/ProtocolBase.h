@@ -78,6 +78,8 @@ public:
     // Check whether uri can be processed by this protocol
     // uri should in utf8 codec
     virtual bool canProcess(const char *uri) = 0;
+    // Get the options when adding uri as task.
+    virtual const char* getTaskOptions(const char *uri) = 0;
 
     // Options
     // opt is a utf8 text like:
