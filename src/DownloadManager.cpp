@@ -6,7 +6,7 @@
 struct TaskData
 {
     TaskInfo *info;
-    std::string data
+    std::string data;
 };
 
 typedef std::vector<TaskData> Tasks;
@@ -28,9 +28,34 @@ DownloadManager::DownloadManager(std::auto_ptr<ProtocolFactory> factory)
 DownloadManager::~DownloadManager()
 {}
 
+enum DownloadManagerErr
+{
+    URI_NULL,
+    OUTPUTPATH_NULL,
+    NO_PROTOCOL,
+    NO_TASK,
+    LAST_ERROR = NO_TASK,
+};
+
+const char* DownloadManager::strerror(int err)
+{
+    static const char *errorString[] =
+        {
+            "uri should not empty.",          // URI_NULL
+            "output path should not empty.",  // OUTPUTPATH_NULL
+            "no protocol can process.",       // NO_PROTOCOL
+            "no special task.",               // NO_TASK
+        };
+
+    if ( (URI_NULL <= err) && (err <= LAST_ERROR) )
+        return errorString[err];
+
+    return "unknown error.";
+}
+
 const char* DownloadManager::getTaskOptions(const char *uri)
 {
-    ProtocolBase *p = f->getProtocol(uri);
+    ProtocolBase *p = d->factory->getProtocol(uri);
     if (p == NULL)
         return NULL;
 
@@ -61,7 +86,7 @@ Task DownloadManager::addTask(const char *uri,
         DOWNLOADEXCEPTION(OUTPUTPATH_NULL, "DownloadManager", strerror(OUTPUTPATH_NULL));
     }
 
-    ProtocolBase *p = f->getProtocol(uri);
+    ProtocolBase *p = d->factory->getProtocol(uri);
     if (p == NULL)
     {
         LOG(0, "don't know how to download %s", uri);
@@ -74,7 +99,7 @@ Task DownloadManager::addTask(const char *uri,
     if (outputName != NULL) info->outputName = outputName;
     if (options    != NULL) info->options    = options;
     if (comment    != NULL) info->comment    = comment;
-    info->p = p;
+    info->protocol = p;
     info->state = TASK_WAIT;
 
     TaskData data;
@@ -153,7 +178,10 @@ bool DownloadManager::startTask(const TaskId id)
             if (it->data.length() == 0)
                 it->info->protocol->addTask(it->info);
             else
-                it->info->protocol->loadTask(it->info, std::istringstream(it->data));
+            {
+                std::istringstream in(it->data);
+                it->info->protocol->loadTask(it->info, in);
+            }
             it->info->state = TASK_DOWNLOAD;
 
             return true;
@@ -180,7 +208,8 @@ bool DownloadManager::stopTask(const TaskId id)
             }
 
             it->data.clear();
-            it->info->protocol->saveTask(id, std::ostringstream(it->data));
+            std::ostringstream out(it->data);
+            it->info->protocol->saveTask(id, out);
             it->info->state = TASK_WAIT;
 
             return true;
@@ -205,11 +234,11 @@ int DownloadManager::perform()
     LOG(0, "enter DownloadManager::perform, downlaod = %p, upload = %p\n", download, upload);
 
     int ret = 0;
-    for (ProtocolFactory::Protocols::iterator it = d->factory.protocols_.begin();
-         it != d->factory.protocols_.end();
+    for (ProtocolFactory::Protocols::iterator it = d->factory->protocols_.begin();
+         it != d->factory->protocols_.end();
          ++it)
     {
-        ret += it->perform();
+        ret += (*it)->perform();
     }
 
     return ret;

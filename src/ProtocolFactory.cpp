@@ -24,8 +24,8 @@ ProtocolFactory::ProtocolFactory()
 
 ProtocolFactory::~ProtocolFactory()
 {
-    for (Protocols::iterator it = map_.begin();
-         it != map_.end();
+    for (Protocols::iterator it = protocols_.begin();
+         it != protocols_.end();
          ++it)
     {
         delete *it;

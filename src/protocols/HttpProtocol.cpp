@@ -68,7 +68,29 @@ enum HttpError
     FAIL_OPEN_FILE,
     TASK_EXIST,
     TASK_NOT_EXIST,
+    LAST_ERROR = TASK_NOT_EXIST,
 };
+
+const char* HttpProtocol::strerror(int error)
+{
+    LOG(0, "enter strerror, error = %d\n", error);
+
+    static const char *errorString[] =
+        {
+            "alloc curl easy handle fail.",      // CURL_BAD_ALLOC
+            "alloc curl multi handle fail.",     // CURLM_BAD_ALLOC
+            "pass NULL task info.",              // NULL_INFO
+            "bad length of file in write back.", // BAD_FILE_LENGTH
+            "open file failed.",                 // FAIL_OPEN_FILE
+            "task exist.",                       // TASK_EXIST
+            "task not exist.",                   // TASK_NOT_EXIST
+        };
+
+    if ( (CURL_BAD_ALLOC <= error) && (error <= LAST_ERROR) )
+        return errorString[error];
+    else
+        return "unknown error.";
+}
 
 size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession *ses)
 {
@@ -1061,23 +1083,3 @@ int HttpProtocol::perform()
     return d->tasks.size();
 }
 
-const char* HttpProtocol::strerror(int error)
-{
-    LOG(0, "enter strerror, error = %d\n", error);
-
-    static const char *errorString[] =
-        {
-            "alloc curl easy handle fail.",      // CURL_BAD_ALLOC
-            "alloc curl multi handle fail.",     // CURLM_BAD_ALLOC
-            "pass NULL task info.",              // NULL_INFO
-            "bad length of file in write back.", // BAD_FILE_LENGTH
-            "open file failed.",                 // FAIL_OPEN_FILE
-            "task exist.",                       // TASK_EXIST
-            "task not exist.",                   // TASK_NOT_EXIST
-        };
-
-    if ( (CURL_BAD_ALLOC <= error) && (error <= FAIL_OPEN_FILE) )
-        return errorString[error];
-    else
-        return "unknown error.";
-}
