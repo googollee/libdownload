@@ -9,10 +9,10 @@ typedef int TaskId;
 
 enum TaskState
 {
-    WAITING,
-    DOWNLOAD,
-    FINISH,
-    ERROR,
+    TASK_WAIT,
+    TASK_DOWNLOAD,
+    TASK_FINISH,
+    TASK_ERROR,
 };
 
 class ProtocolBase;
@@ -54,7 +54,7 @@ struct TaskInfo
           uploadSize(0),
           totalSource(0),
           validSource(0),
-          state(WAITING),
+          state(TASK_WAIT),
           protocol(NULL)
         {}
 };

@@ -2,8 +2,13 @@
 #define DOWNLOAD_MANAGER_HEADER
 
 #include "Global.h"
+#include "ProtocolFactory.h"
 #include "protocols/ProtocolBase.h"
 #include "utility/Utility.h"
+
+#include <memory>
+#include <istream>
+#include <ostream>
 
 class Task
 {
@@ -36,25 +41,35 @@ private:
     TaskInfo *info_;
 };
 
+struct DownloadManagerData;
+
 class DownloadManager : private Noncopiable
 {
 public:
-    DownloadManager();
+    DownloadManager(std::auto_ptr<ProtocolFactory> factory);
     ~DownloadManager();
 
-    const char* getTaskOptions(const char *url);
-    Task addTask(const char *url,
+    bool canDownload(const char *uri);
+    const char* getTaskOptions(const char *uri);
+    Task addTask(const char *uri,
                  const char *outputPath,
                  const char *outputName,
                  const char *options,
                  const char *comment);
+
+    Task getTask(const TaskId id);
     bool isTaskExist(const TaskId id);
     bool removeTask(const TaskId id);
-
     bool startTask(const TaskId id);
     bool stopTask(const TaskId id);
 
-    int perform(size_t *download, size_t *upload);
+    void load(std::istream &in);
+    void save(std::ostream &out);
+
+    int perform();
+
+private:
+    std::auto_ptr<DownloadManagerData> d;
 };
 
 #endif

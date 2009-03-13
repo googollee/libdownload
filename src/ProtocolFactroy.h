@@ -18,39 +18,29 @@ class ProtocolFactory : private Noncopiable
 public:
     typedef std::vector<ProtocolBase*> Protocols;
 
-    static bool addProtocol(std::auto_ptr<ProtocolBase> protocol);
-    static ProtocolBase* getProtocol(const char *url);
+    ProtocolFactory();
     ~ProtocolFactory();
 
-private:
-    static ProtocolFactory& instance();
+    bool addProtocol(std::auto_ptr<ProtocolBase> protocol);
+    ProtocolBase* getProtocol(const char *uri);
 
-    ProtocolFactory();
+private:
+    friend class DownloadManager;
 
     Protocols protocols_;
 };
 
-inline ProtocolFactory& ProtocolFactory::instance()
-{
-    static ProtocolFactory instance;
-    return instance;
-}
-
-bool checkCanProcess(ProtocolBase *protocol, const char *url)
-{
-    return protocol->canProcess(url);
-}
-
 inline ProtocolBase* ProtocolFactory::getProtocol(const char *uri)
 {
-    Protocols::iterator ret = find_if(protocols_.begin(),
-                                      protocols_.end(),
-                                      bind_2nd(checkCanProcess, uri));
+    for (Protocols::iterator it = protocols_.begin();
+         it != protocols_.end();
+         ++it)
+    {
+        if ((*it)->canProcess(uri))
+            return *it;
+    }
 
-    if (ret == protocols_.end())
-        return 0;
-
-    return *ret;
+    return NULL;
 }
 
 #endif

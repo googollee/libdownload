@@ -66,7 +66,6 @@ TEST(HttpTest, AddTask)
         info->outputName = "";
 
         http.addTask(info);
-        info->state = DOWNLOAD;
 
         http.removeTask(info->id);
 
@@ -144,7 +143,6 @@ TEST(HttpTest, NormalDownload)
         info->outputName = "";
 
         http.addTask(info);
-        info->state = DOWNLOAD;
 
         while (http.perform() > 0)
         {
@@ -195,7 +193,6 @@ TEST(HttpTest, SaveLoadDownload)
         info->outputName = "";
 
         http.addTask(info);
-        info->state = DOWNLOAD;
 
         int i = 0;
         while (http.perform() > 0)
@@ -240,7 +237,6 @@ TEST(HttpTest, SaveLoadDownload)
 
         std::istringstream in(data);
         http.loadTask(info, in);
-        info->state = DOWNLOAD;
 
         while (http.perform() > 0)
         {

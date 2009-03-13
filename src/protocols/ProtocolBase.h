@@ -5,8 +5,8 @@
 #include "utility/Utility.h"
 
 #include <boost/signals.hpp>
-
-#include <iterator>
+#include <istream>
+#include <ostream>
 
 #if defined(WIN32) && !defined(_WIN32_WCE) && !defined(__GNUC__) && \
   !defined(__CYGWIN__) || defined(__MINGW32__)
