@@ -44,12 +44,26 @@ SimpleXmlParser_unittest_LDADD = \
     $(top_srcdir)/src/utility/libutility.la \
     $(GLIB_LIBS)
 
-TESTS += protocol/HttpProtocol_unittest.sh
+TESTS += protocols/HttpProtocol_unittest.sh
 check_PROGRAMS += HttpProtocol_unittest
-HttpProtocol_unittest_SOURCES = protocol/HttpProtocol_unittest.cpp
+HttpProtocol_unittest_SOURCES = protocols/HttpProtocol_unittest.cpp
 HttpProtocol_unittest_CPPFLAGS = ${LIBCURL_CPPFLAGS} ${BOOST_CPPFLAGS} $(GLIB_CFLAGS)
 HttpProtocol_unittest_LDADD = \
     gtest/lib/libgtest_main.la \
+    $(top_srcdir)/src/protocols/libprotocols.la \
+    $(top_srcdir)/src/utility/libutility.la \
+    ${LIBCURL_LIBS} \
+    ${BOOST_LDFLAGS} \
+    ${BOOST_SIGNALS_LIB} \
+    $(GLIB_LIBS)
+
+TESTS += ProtocolFactory_unittest
+check_PROGRAMS += ProtocolFactory_unittest
+ProtocolFactory_unittest_SOURCES = ProtocolFactory_unittest.cpp
+ProtocolFactory_unittest_CPPFLAGS = ${LIBCURL_CPPFLAGS} ${BOOST_CPPFLAGS} $(GLIB_CFLAGS)
+ProtocolFactory_unittest_LDADD = \
+    gtest/lib/libgtest_main.la \
+    $(top_srcdir)/src/libdownload.la \
     $(top_srcdir)/src/protocols/libprotocols.la \
     $(top_srcdir)/src/utility/libutility.la \
     ${LIBCURL_LIBS} \
