@@ -36,7 +36,9 @@ public:
 private:
     friend class DownloadManager;
 
-    Task(TaskInfo *info);
+    Task(TaskInfo *info)
+        : info_(info)
+        {}
 
     TaskInfo *info_;
 };
