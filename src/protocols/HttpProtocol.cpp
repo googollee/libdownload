@@ -729,7 +729,27 @@ bool HttpProtocol::canProcess(const char *uri)
 
 const char* HttpProtocol::getTaskOptions(const char *uri)
 {
-    return getAllOptions();
+    HttpConfigure defaultConf;
+    std::string buf = str(
+        boost::format(
+            "<Protocol>%s</Protocol>\n"
+            "<SessionNumber>%d</SessionNumber>\n"
+            "<MinSessionBlocks>%d</MinSessionBlocks>\n"
+            "<BytesPerBlock>%d</BytesPerBlock>")
+        % name()
+        % defaultConf.sessionNumber
+        % defaultConf.minSessionBlocks
+        % defaultConf.bytesPerBlock
+        );
+
+    static char *ret = NULL;
+    if (ret != NULL)
+        delete [] ret;
+
+    ret = new char[buf.length() + 1];
+    strcpy(ret, buf.c_str());
+
+    return ret;
 }
 
 void HttpProtocol::loadOptions(std::istream &in)

@@ -109,48 +109,32 @@ Task DownloadManager::addTask(const char *uri,
     return Task(info);
 }
 
-Task DownloadManager::getTask(const TaskId id)
+bool DownloadManager::isTaskExist(Task task)
 {
-    LOG(0, "enter DownloadManager::getTask, id = %d\n", id);
+    LOG(0, "enter DownloadManager::isTaskExist, task = %p\n", task.info_);
 
     for (Tasks::iterator it = d->tasks.begin();
          it != d->tasks.end();
          ++it)
     {
-        if (it->info->id == id)
-            return Task(it->info);
-    }
-
-    LOG(0, "can't find task with id = %d", id);
-    DOWNLOADEXCEPTION(NO_TASK, "DownloadManager", strerror(NO_TASK));
-}
-
-bool DownloadManager::isTaskExist(const TaskId id)
-{
-    LOG(0, "enter DownloadManager::isTaskExist, id = %d\n", id);
-
-    for (Tasks::iterator it = d->tasks.begin();
-         it != d->tasks.end();
-         ++it)
-    {
-        if (it->info->id == id)
+        if (it->info == task.info_)
             return true;
     }
 
     return false;
 }
 
-bool DownloadManager::removeTask(const TaskId id)
+bool DownloadManager::removeTask(Task task)
 {
-    LOG(0, "enter DownloadManager::removeTask, id = %d\n", id);
+    LOG(0, "enter DownloadManager::removeTask, task = %p\n", task.info_);
 
     for (Tasks::iterator it = d->tasks.begin();
          it != d->tasks.end();
          ++it)
     {
-        if (it->info->id == id)
+        if (it->info == task.info_)
         {
-            it->info->protocol->removeTask(id);
+            it->info->protocol->removeTask(task.id());
             delete it->info;
             return true;
         }
@@ -159,19 +143,19 @@ bool DownloadManager::removeTask(const TaskId id)
     return false;
 }
 
-bool DownloadManager::startTask(const TaskId id)
+bool DownloadManager::startTask(Task task)
 {
-    LOG(0, "enter DownloadManager::startTask, id = %d\n", id);
+    LOG(0, "enter DownloadManager::startTask, task = %p\n", task.info_);
 
     for (Tasks::iterator it = d->tasks.begin();
          it != d->tasks.end();
          ++it)
     {
-        if (it->info->id == id)
+        if (it->info == task.info_)
         {
             if ( (it->info->state == TASK_FINISH) || (it->info->state == TASK_DOWNLOAD) )
             {
-                LOG(0, "task %d state is %d, can't start\n", id, it->info->state);
+                LOG(0, "task %d state is %d, can't start\n", task.id(), it->info->state);
                 return false;
             }
 
@@ -191,25 +175,25 @@ bool DownloadManager::startTask(const TaskId id)
     return false;
 }
 
-bool DownloadManager::stopTask(const TaskId id)
+bool DownloadManager::stopTask(Task task)
 {
-    LOG(0, "enter DownloadManager::stopTask, id = %d\n", id);
+    LOG(0, "enter DownloadManager::stopTask, task = %p\n", task.info_);
 
     for (Tasks::iterator it = d->tasks.begin();
          it != d->tasks.end();
          ++it)
     {
-        if (it->info->id == id)
+        if (it->info == task.info_)
         {
             if (it->info->state != TASK_DOWNLOAD)
             {
-                LOG(0, "task %d state is %d, can't stop\n", id, it->info->state);
+                LOG(0, "task %d state is %d, can't stop\n", task.id(), it->info->state);
                 return false;
             }
 
             it->data.clear();
             std::ostringstream out(it->data);
-            it->info->protocol->saveTask(id, out);
+            it->info->protocol->saveTask(task.id(), out);
             it->info->state = TASK_WAIT;
 
             return true;

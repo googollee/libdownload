@@ -6,6 +6,8 @@
 #include "protocols/ProtocolBase.h"
 #include "utility/Utility.h"
 
+#include <boost/signals.hpp>
+
 #include <memory>
 #include <istream>
 #include <ostream>
@@ -45,9 +47,29 @@ private:
 
 struct DownloadManagerData;
 
+/**
+ * Normal usage:
+ * ProtocolFactory *factory = new ProtocolFactory();
+ * factory->addProtocol(...);
+ *
+ * DownloadManager manager(auto_prt<ProtocolFactory>(factory));
+ * const char *taskOptions = manager.getTaskOptions(uri);
+ * ...determine the task options...
+ * Task task = manager.addTask(uri, outputPath, outputName, taskOptions, comment);
+ * manager.startTask(task.id());
+ *
+ * while (manager.perform() > 0) {}
+ *
+ * manager.removeTask(task.id());
+ *
+ * download end.
+ */
 class DownloadManager : private Noncopiable
 {
 public:
+    typedef void TaskStateChangeCallback(Task task, TaskState oldState, TaskState newState);
+    boost::signal<TaskStateChangeCallback> taskStateChange;
+
     DownloadManager(std::auto_ptr<ProtocolFactory> factory);
     ~DownloadManager();
 
@@ -61,11 +83,10 @@ public:
                  const char *options,
                  const char *comment);
 
-    Task getTask(const TaskId id);
-    bool isTaskExist(const TaskId id);
-    bool removeTask(const TaskId id);
-    bool startTask(const TaskId id);
-    bool stopTask(const TaskId id);
+    bool isTaskExist(Task task);
+    bool removeTask(Task task);
+    bool startTask(Task task);
+    bool stopTask(Task task);
 
     void load(std::istream &in);
     void save(std::ostream &out);
