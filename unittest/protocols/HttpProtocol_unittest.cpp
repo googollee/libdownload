@@ -8,17 +8,17 @@
 
 void ErrorCallback(TaskInfo *info, int error)
 {
-    printf("%s task %d error: (%d)%s\n", info->protocol->name(), info->id, error, info->protocol->strerror(error));
+    printf("%s task %p error: (%d)%s\n", info->protocol->name(), info, error, info->protocol->strerror(error));
 }
 
 void DownloadFinishCallback(TaskInfo *info)
 {
-    printf("%s task %d download finished\n", info->protocol->name(), info->id);
+    printf("%s task %p download finished\n", info->protocol->name(), info);
 }
 
 void LogTaskInfoCallback(TaskInfo *info, const char *log)
 {
-    printf("%s task %d: %s\n", info->protocol->name(), info->id, log);
+    printf("%s task %p: %s\n", info->protocol->name(), info, log);
 }
 
 void LogProtocolInfoCallback(ProtocolBase *p, const char *log)
@@ -60,14 +60,13 @@ TEST(HttpTest, AddTask)
 
         TaskInfo *info = new TaskInfo;
 
-        info->id = 0;
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
         info->outputName = "";
 
         http.addTask(info);
 
-        http.removeTask(info->id);
+        http.removeTask(info);
 
         delete info;
     }
@@ -92,7 +91,6 @@ TEST(HttpTest, AddTaskWithOptions)
 
         TaskInfo *info = new TaskInfo;
 
-        info->id = 0;
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
         info->outputName = "";
@@ -103,7 +101,7 @@ TEST(HttpTest, AddTaskWithOptions)
         http.addTask(info);
 
         std::ostringstream out;
-        http.saveTask(info->id, out);
+        http.saveTask(info, out);
         std::string data = out.str();
         EXPECT_EQ(data,
                   "<SessionNumber>100</SessionNumber>\n"
@@ -112,7 +110,7 @@ TEST(HttpTest, AddTaskWithOptions)
                   "<TotalSize>0</TotalSize>\n"
                   "<BitMap></BitMap>");
 
-        http.removeTask(info->id);
+        http.removeTask(info);
 
         delete info;
     }
@@ -137,7 +135,6 @@ TEST(HttpTest, NormalDownload)
 
         TaskInfo *info = new TaskInfo;
 
-        info->id = 0;
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
         info->outputName = "";
@@ -187,7 +184,6 @@ TEST(HttpTest, SaveLoadDownload)
     {
         TaskInfo *info = new TaskInfo;
 
-        info->id = 0;
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
         info->outputName = "";
@@ -210,11 +206,11 @@ TEST(HttpTest, SaveLoadDownload)
         }
 
         std::ostringstream out;
-        http.saveTask(info->id, out);
+        http.saveTask(info, out);
         data = out.str();
         printf("%s\n", data.c_str());
 
-        http.removeTask(info->id);
+        http.removeTask(info);
 
         delete info;
 
@@ -230,7 +226,6 @@ TEST(HttpTest, SaveLoadDownload)
     {
         TaskInfo *info = new TaskInfo;
 
-        info->id = 0;
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
         info->outputName = "";

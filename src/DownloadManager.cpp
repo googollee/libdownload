@@ -134,7 +134,7 @@ bool DownloadManager::removeTask(Task task)
     {
         if (it->info == task.info_)
         {
-            it->info->protocol->removeTask(task.id());
+            it->info->protocol->removeTask(task.info_);
             delete it->info;
             return true;
         }
@@ -193,7 +193,7 @@ bool DownloadManager::stopTask(Task task)
 
             it->data.clear();
             std::ostringstream out(it->data);
-            it->info->protocol->saveTask(task.id(), out);
+            it->info->protocol->saveTask(task.info_, out);
             it->info->state = TASK_WAIT;
 
             return true;

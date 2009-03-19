@@ -77,7 +77,7 @@ public:
 
     // Check whether uri can be processed by this protocol
     // uri should in utf8 codec
-    virtual bool canProcess(const char *uri) = 0;
+    virtual bool        canProcess    (const char *uri) = 0;
     // Get the options when adding uri as task.
     virtual const char* getTaskOptions(const char *uri) = 0;
 
@@ -105,23 +105,23 @@ public:
     virtual void control(ControlFlag f, const char* key, void *value) = 0;
 
     // Task control
-    // this options is session related
-    // info is controled by manager, can modify in protocol
-    virtual void addTask(TaskInfo *info) = 0;
-    virtual void removeTask(const TaskId id) = 0;
-    virtual bool hasTask(const TaskId id) = 0;
-    virtual void controlTask(const TaskId id, ControlFlag f, const char* key, void *value) = 0;
+    // TaskInfo is controled by manager, can modify in protocol
+    // If info->processData doesn't empty, need do resume.
+    virtual void addTask      (TaskInfo *info) = 0;
+    virtual void removeTask   (TaskInfo *info) = 0;
+    virtual bool hasTask      (TaskInfo *info) = 0;
+    virtual void controlTask  (TaskInfo *info, ControlFlag f, const char* key, void *value) = 0;
 
     // Save and load
     // load must be end before "</data>"
     virtual void loadTask(TaskInfo *info, std::istream &in) = 0;
-    virtual void saveTask(const TaskId id, std::ostream &out) = 0;
+    virtual void saveTask(TaskInfo *info, std::ostream &out) = 0;
 
     // Perform download
     virtual void getFdSet(fd_set *read_fd_set,
                           fd_set *write_fd_set,
                           fd_set *exc_fd_set,
-                          int *max_fd) = 0;
+                          int    *max_fd) = 0;
 
     // return the downloading items number
     // downloaded and uploaded speed unit is byte.

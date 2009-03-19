@@ -14,7 +14,7 @@ struct HttpProtocolData;
 struct HttpTask;
 struct HttpSession;
 
-typedef std::map<TaskId, HttpTask*> Tasks;
+typedef std::map<TaskInfo*, HttpTask*> Tasks;
 typedef std::vector<HttpSession*> Sessions;
 
 struct HttpConfigure

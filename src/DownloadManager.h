@@ -15,7 +15,7 @@
 class Task
 {
 public:
-    TaskId      id()           { return info_->id; }
+    void*       id()           { return info_; }
     const char* uri()          { return info_->uri.c_str(); }
     const char* outputPath()   { return info_->outputPath.c_str(); }
     const char* outputname()   { return info_->outputName.c_str(); }
@@ -75,18 +75,18 @@ public:
 
     const char* strerror(int err);
 
-    bool canDownload(const char *uri);
+    bool        canDownload   (const char *uri);
     const char* getTaskOptions(const char *uri);
-    Task addTask(const char *uri,
-                 const char *outputPath,
-                 const char *outputName,
-                 const char *options,
-                 const char *comment);
+    Task        addTask(const char *uri,
+                        const char *outputPath,
+                        const char *outputName,
+                        const char *options,
+                        const char *comment);
 
     bool isTaskExist(Task task);
-    bool removeTask(Task task);
-    bool startTask(Task task);
-    bool stopTask(Task task);
+    bool removeTask (Task task);
+    bool startTask  (Task task);
+    bool stopTask   (Task task);
 
     void load(std::istream &in);
     void save(std::ostream &out);

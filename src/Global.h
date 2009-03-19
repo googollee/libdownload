@@ -5,8 +5,6 @@
 
 #include <string>
 
-typedef int TaskId;
-
 enum TaskState
 {
     TASK_WAIT,
@@ -19,19 +17,16 @@ class ProtocolBase;
 
 struct TaskInfo
 {
-    TaskId id;
-
     std::string uri;
     std::string outputPath;
     std::string outputName;
-
     // Options is a string like:
     // <key1>value1</key1>
     // <key2>value2</key2>
     //...
     std::string options;
-
     std::string comment;
+    std::string processData;
 
     // no need save below
     size_t totalSize;
@@ -48,8 +43,7 @@ struct TaskInfo
     ProtocolBase *protocol;
 
     TaskInfo()
-        : id(0),
-          totalSize(0),
+        : totalSize(0),
           downloadSize(0),
           uploadSize(0),
           totalSource(0),

@@ -502,13 +502,13 @@ void HttpProtocolData::checkSession(HttpSession *ses)
 
     if (task->sessions.size() == 0)
     {
-        LOG(0, "task %d finish\n", task->info->id);
+        TaskInfo *info = task->info;
+        LOG(0, "task %p finish\n", info);
 
-        const TaskId id = task->info->id;
-        p->downloadFinish(task->info);
+        p->downloadFinish(info);
 
-        if (p->hasTask(id))
-            p->removeTask(id);
+        if (p->hasTask(info))
+            p->removeTask(info);
 
         return;
     }
@@ -865,10 +865,10 @@ void HttpProtocol::addTask(TaskInfo *info)
     if (info == NULL)
         throw DOWNLOADEXCEPTION(NULL_INFO, "HTTP", strerror(NULL_INFO));
 
-    Tasks::iterator it = d->tasks.find(info->id);
+    Tasks::iterator it = d->tasks.find(info);
     if (it != d->tasks.end())
     {
-        LOG(0, "task %d has exist\n", info->id);
+        LOG(0, "task %p has exist\n", info);
         taskError(info, TASK_EXIST);
         return;
     }
@@ -925,18 +925,18 @@ void HttpProtocol::addTask(TaskInfo *info)
     }
     ++d->running;
 
-    d->tasks.insert(Tasks::value_type(info->id, task.get()));
+    d->tasks.insert(Tasks::value_type(info, task.get()));
     task->sessions.push_back(ses.get());
 
     ses.release();
     task.release();
 }
 
-void HttpProtocol::removeTask(const TaskId id)
+void HttpProtocol::removeTask(TaskInfo *info)
 {
-    LOG(0, "enter removeTask, id = %u\n", id);
+    LOG(0, "enter removeTask, info = %p\n", info);
 
-    Tasks::iterator it = d->tasks.find(id);
+    Tasks::iterator it = d->tasks.find(info);
     if (it == d->tasks.end())
     {
         LOG(0, "id %d doesn't exist\n", id);
@@ -944,16 +944,16 @@ void HttpProtocol::removeTask(const TaskId id)
         return;
     }
 
-    taskLog(it->second->info, "remove task");
+    taskLog(info, "remove task");
 
     d->removeTask(it);
 }
 
-bool HttpProtocol::hasTask(const TaskId id)
+bool HttpProtocol::hasTask(TaskInfo *info)
 {
-    LOG(0, "enter hasTask, id = %u\n", id);
+    LOG(0, "enter hasTask, info = %p\n", info);
 
-    Tasks::iterator it = d->tasks.find(id);
+    Tasks::iterator it = d->tasks.find(info);
     return it != d->tasks.end();
 }
 
@@ -961,10 +961,10 @@ void HttpProtocol::loadTask(TaskInfo *info, std::istream &in)
 {
     LOG(0, "enter loadTask, info = %p\n", info);
 
-    Tasks::iterator it = d->tasks.find(info->id);
+    Tasks::iterator it = d->tasks.find(info);
     if (it != d->tasks.end())
     {
-        LOG(0, "id %d exist\n", info->id);
+        LOG(0, "task %p exist\n", info);
         taskError(info, TASK_EXIST);
         return;
     }
@@ -1019,7 +1019,7 @@ void HttpProtocol::loadTask(TaskInfo *info, std::istream &in)
     }
     ++d->running;
 
-    d->tasks.insert(Tasks::value_type(info->id, task.get()));
+    d->tasks.insert(Tasks::value_type(info, task.get()));
     task->sessions.push_back(ses.get());
 
     taskLog(info, "load task");
@@ -1028,33 +1028,34 @@ void HttpProtocol::loadTask(TaskInfo *info, std::istream &in)
     task.release();
 }
 
-void HttpProtocol::saveTask(const TaskId id, std::ostream &out)
+void HttpProtocol::saveTask(TaskInfo *info, std::ostream &out)
 {
-    LOG(0, "enter saveTask, id = %u\n", id);
+    LOG(0, "enter saveTask, info = %p\n", info);
 
-    Tasks::iterator it = d->tasks.find(id);
+    Tasks::iterator it = d->tasks.find(info);
     if (it == d->tasks.end())
     {
-        LOG(0, "id %d doesn't exist\n", id);
+        LOG(0, "task %p doesn't exist\n", info);
         taskError(NULL, TASK_NOT_EXIST);
         return;
     }
 
-    taskLog(it->second->info, "save task");
+    taskLog(info, "save task");
 
     d->saveTask(it, out);
 }
 
-void HttpProtocol::controlTask(const TaskId id, ControlFlag f, const char *cmd, void *value)
+void HttpProtocol::controlTask(TaskInfo *info, ControlFlag f, const char *cmd, void *value)
 {
-    LOG(0, "enter controlTask, id = %u\n", id);
+    LOG(0, "enter controlTask, info = %p, flag = %d, cmd = %s, value = %s\n",
+        info, f, cmd, value);
     LOG(0, "no control when http protocol working.");
 }
 
 void HttpProtocol::getFdSet(fd_set *read_fd_set,
                             fd_set *write_fd_set,
                             fd_set *exc_fd_set,
-                            int *max_fd)
+                            int    *max_fd)
 {
     LOG(0, "enter getFdSet, read_fd_set = %p, write_fd_set = %p, exc_fd_set = %p, max_fd = %p\n",
         read_fd_set, write_fd_set, exc_fd_set, max_fd);
