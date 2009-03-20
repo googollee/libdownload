@@ -24,12 +24,10 @@ public:
     virtual void        control(ControlFlag f, const char* key, void *value);
 
     virtual void addTask      (TaskInfo *info);
+    virtual void flushTask    (TaskInfo *info);
     virtual void removeTask   (TaskInfo *info);
     virtual bool hasTask      (TaskInfo *info);
     virtual void controlTask  (TaskInfo *info, ControlFlag f, const char* key, void *value);
-
-    virtual void loadTask(TaskInfo *info, std::istream &in);
-    virtual void saveTask(TaskInfo *info, std::ostream &out);
 
     virtual void getFdSet(fd_set *read_fd_set,
                           fd_set *write_fd_set,

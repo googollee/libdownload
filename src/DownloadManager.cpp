@@ -164,7 +164,7 @@ bool DownloadManager::startTask(Task task)
             else
             {
                 std::istringstream in(it->data);
-                it->info->protocol->loadTask(it->info, in);
+                it->info->protocol->addTask(it->info);
             }
             it->info->state = TASK_DOWNLOAD;
 
@@ -193,7 +193,7 @@ bool DownloadManager::stopTask(Task task)
 
             it->data.clear();
             std::ostringstream out(it->data);
-            it->info->protocol->saveTask(task.info_, out);
+            it->info->protocol->flushTask(task.info_);
             it->info->state = TASK_WAIT;
 
             return true;

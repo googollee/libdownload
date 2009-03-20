@@ -108,14 +108,11 @@ public:
     // TaskInfo is controled by manager, can modify in protocol
     // If info->processData doesn't empty, need do resume.
     virtual void addTask      (TaskInfo *info) = 0;
+    // Flush the process data into info->processData
+    virtual void flushTask    (TaskInfo *info) = 0;
     virtual void removeTask   (TaskInfo *info) = 0;
     virtual bool hasTask      (TaskInfo *info) = 0;
     virtual void controlTask  (TaskInfo *info, ControlFlag f, const char* key, void *value) = 0;
-
-    // Save and load
-    // load must be end before "</data>"
-    virtual void loadTask(TaskInfo *info, std::istream &in) = 0;
-    virtual void saveTask(TaskInfo *info, std::ostream &out) = 0;
 
     // Perform download
     virtual void getFdSet(fd_set *read_fd_set,

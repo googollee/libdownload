@@ -100,15 +100,8 @@ TEST(HttpTest, AddTaskWithOptions)
 
         http.addTask(info);
 
-        std::ostringstream out;
-        http.saveTask(info, out);
-        std::string data = out.str();
-        EXPECT_EQ(data,
-                  "<SessionNumber>100</SessionNumber>\n"
-                  "<MinSessionBlocks>200</MinSessionBlocks>\n"
-                  "<BytesPerBlock>1024</BytesPerBlock>\n"
-                  "<TotalSize>0</TotalSize>\n"
-                  "<BitMap></BitMap>");
+        http.flushTask(info);
+        EXPECT_EQ(info->processData, "");
 
         http.removeTask(info);
 
@@ -205,9 +198,8 @@ TEST(HttpTest, SaveLoadDownload)
                 ++i;
         }
 
-        std::ostringstream out;
-        http.saveTask(info, out);
-        data = out.str();
+        http.flushTask(info);
+        data = info->processData.c_str();
         printf("%s\n", data.c_str());
 
         http.removeTask(info);
@@ -229,9 +221,57 @@ TEST(HttpTest, SaveLoadDownload)
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
         info->outputName = "";
+        info->processData = data;
 
-        std::istringstream in(data);
-        http.loadTask(info, in);
+        http.addTask(info);
+
+        while (http.perform() > 0)
+        {
+            if (info->totalSize > 0)
+                printf("progress: %lu%%, %d/%d\r",
+                       info->downloadSize * 100 / info->totalSize,
+                       info->validSource,
+                       info->totalSource
+                    );
+        }
+
+        printf("download finish, total size = %lu\n", info->totalSize);
+        printf("download finish, download size = %lu\n", info->downloadSize);
+        printf("download map:\n");
+        for (size_t i=0; i<info->downloadMap.size(); ++i)
+        {
+            printf("%d", info->downloadMap.get(i));
+        }
+        printf("\n");
+
+        delete info;
+    }
+    catch (DownloadException &e)
+    {
+        printf("catch exception: %s:%u error %d in %s: %s\n",
+               e.file(), e.lineoff(),
+               e.error(), e.component(), e.what());
+    }
+}
+
+TEST(HttpTest, DownloadZeroFile)
+{
+    try
+    {
+        HttpProtocol http;
+
+        http.taskError.connect(ErrorCallback);
+        http.downloadFinish.connect(DownloadFinishCallback);
+        http.taskLog.connect(LogTaskInfoCallback);
+        http.protocolLog.connect(LogProtocolInfoCallback);
+
+        TaskInfo *info = new TaskInfo;
+
+        info->uri = "http://www.googollee.net/zero.file";
+        info->outputPath = "./";
+        info->outputName = "";
+
+        http.addTask(info);
 
         while (http.perform() > 0)
         {
