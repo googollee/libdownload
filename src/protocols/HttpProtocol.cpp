@@ -99,7 +99,6 @@ size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession *ses)
     if (task->state == HT_PREPARE)
     {
         task->d->initTask(task);
-        printf("here\n");
     }
 
     const size_t totalSize = size * nmemb;
@@ -146,7 +145,6 @@ private:
     void text(const char *text,
               size_t textLen)
         {
-            printf("in parser::text, len = %lu, text = %s\n", textLen, text);
             while ( (*text == ' ') || (*text == '\n') )
             {
                 ++text;
@@ -217,6 +215,8 @@ private:
 
 public:
     HttpConfXmlParser()
+        : totalSize(0),
+          downloadSize(0)
         {}
 
     HttpConfigure conf;
@@ -418,15 +418,6 @@ void HttpProtocolData::loadTask(HttpTask *task, std::string &data)
     info->totalSize = parser.totalSize;
     info->downloadSize = parser.downloadSize;
     info->downloadMap = parser.downloadMap;
-
-    printf("download finish, total size = %lu\n", info->totalSize);
-    printf("download finish, download size = %lu\n", info->downloadSize);
-    printf("download map:\n");
-    for (size_t i=0; i<info->downloadMap.size(); ++i)
-    {
-        printf("%d", info->downloadMap.get(i));
-    }
-    printf("\n");
 }
 
 bool findNonDownload(HttpTask *task, size_t *begin, size_t *len)
@@ -920,37 +911,19 @@ void HttpProtocol::addTask(TaskInfo *info)
     rete = curl_easy_setopt(ses->handle, CURLOPT_PRIVATE, ses.get());
     CHECK_CURLE(rete);
 
-    if (info->processData.length() == 0)
-    {
-        taskLog(task->info, "Add new task, initialize");
-        if (info->options.length() != 0)
-        {
-            HttpConfXmlParser parser;
-            parser.feed(info->options.c_str());
-            parser.finish();
-            if (parser.getError(NULL) == NULL)
-            {
-                if (parser.conf.sessionNumber > 0)
-                    task->conf.sessionNumber = parser.conf.sessionNumber;
-                if (parser.conf.minSessionBlocks > 0)
-                    task->conf.minSessionBlocks = parser.conf.minSessionBlocks;
-                if (parser.conf.bytesPerBlock > 0)
-                    task->conf.bytesPerBlock = parser.conf.bytesPerBlock;
-            }
-        }
-    }
-    else
+    if (info->processData.length() != 0)
     {
         taskLog(task->info, "Resume task, initialize");
-        d->loadTask(task.get(), info->processData);
 
-        unsigned int begin = info->downloadMap.find(false, 0) * task->info->downloadMap.bytesPerBit();
-        unsigned int end   = info->downloadMap.find(true, begin) * task->info->downloadMap.bytesPerBit();
-        ses->pos = begin;
-        ses->length = end - begin;
+        d->loadTask(task.get(), info->processData);
 
         if (task->info->totalSize > 0)
         {
+            unsigned int begin = info->downloadMap.find(false, 0) * task->info->downloadMap.bytesPerBit();
+            unsigned int end   = info->downloadMap.find(true, begin) * task->info->downloadMap.bytesPerBit();
+            ses->pos = begin;
+            ses->length = end - begin;
+
             char range[64];
             sprintf(range, "%u-%u", begin, end);
             LOG(0, "resume task at %s\n", range);
@@ -958,6 +931,15 @@ void HttpProtocol::addTask(TaskInfo *info)
             rete = curl_easy_setopt(ses->handle, CURLOPT_RANGE, range);
             CHECK_CURLE(rete);
         }
+    }
+    else
+    {
+        taskLog(task->info, "Add new task, initialize");
+    }
+
+    if ( (task->info->totalSize == 0) && (info->options.length() != 0) )
+    {
+        d->loadTask(task.get(), info->options);
     }
 
     CURLMcode retm = curl_multi_add_handle(d->handle, ses->handle);
