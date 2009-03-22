@@ -15,7 +15,7 @@
 class Task
 {
 public:
-    void*       id()           { return info_; }
+    int         id()           { return (int)info_; }
     const char* uri()          { return info_->uri.c_str(); }
     const char* outputPath()   { return info_->outputPath.c_str(); }
     const char* outputname()   { return info_->outputName.c_str(); }
@@ -53,10 +53,10 @@ struct DownloadManagerData;
  * factory->addProtocol(...);
  *
  * DownloadManager manager(auto_prt<ProtocolFactory>(factory));
- * const char *taskOptions = manager.getTaskOptions(uri);
+ * string taskOptions = manager.getTaskOptions(uri);
  * ...determine the task options...
- * Task task = manager.addTask(uri, outputPath, outputName, taskOptions, comment);
- * manager.startTask(task.id());
+ * Task task = manager.addTask(uri, outputPath, outputName, taskOptions.c_str(), comment);
+ * manager.startTask(task);
  *
  * while (manager.perform() > 0) {}
  *
@@ -70,19 +70,19 @@ public:
     typedef void TaskStateChangeCallback(Task task, TaskState oldState, TaskState newState);
     boost::signal<TaskStateChangeCallback> taskStateChange;
 
-    DownloadManager(std::auto_ptr<ProtocolFactory> factory);
+    explicit DownloadManager(std::auto_ptr<ProtocolFactory> factory);
     ~DownloadManager();
 
     const char* strerror(int err);
 
     bool        canDownload   (const char *uri);
     const char* getTaskOptions(const char *uri);
-    Task        addTask(const char *uri,
-                        const char *outputPath,
-                        const char *outputName,
-                        const char *options,
-                        const char *comment);
 
+    Task addTask(const char *uri,
+                 const char *outputPath,
+                 const char *outputName,
+                 const char *options,
+                 const char *comment);
     bool isTaskExist(Task task);
     bool removeTask (Task task);
     bool startTask  (Task task);

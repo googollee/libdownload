@@ -68,7 +68,8 @@ enum HttpError
     FAIL_OPEN_FILE,
     TASK_EXIST,
     TASK_NOT_EXIST,
-    LAST_ERROR = TASK_NOT_EXIST,
+    XML_PARSE_ERROR,
+    LAST_ERROR = XML_PARSE_ERROR,
 };
 
 const char* HttpProtocol::strerror(int error)
@@ -84,6 +85,7 @@ const char* HttpProtocol::strerror(int error)
             "open file failed.",                 // FAIL_OPEN_FILE
             "task exist.",                       // TASK_EXIST
             "task not exist.",                   // TASK_NOT_EXIST
+            "xml parse error.",                  // XML_PARSE_ERROR
         };
 
     if ( (CURL_BAD_ALLOC <= error) && (error <= LAST_ERROR) )
@@ -411,6 +413,7 @@ void HttpProtocolData::loadTask(HttpTask *task, std::string &data)
     if (parser.getError(NULL) != NULL)
     {
         LOG(0, "load task %p error: %s\n", parser.getError(NULL));
+        throw DOWNLOADEXCEPTION(XML_PARSE_ERROR, "HTTP", parser.getError(NULL));
     }
     parser.finish();
 
@@ -879,8 +882,7 @@ void HttpProtocol::addTask(TaskInfo *info)
     if (it != d->tasks.end())
     {
         LOG(0, "task %p has exist\n", info);
-        taskError(info, TASK_EXIST);
-        return;
+        throw DOWNLOADEXCEPTION(TASK_EXIST, "HTTP", strerror(TASK_EXIST));
     }
 
     std::auto_ptr<HttpTask> task( new HttpTask(d.get()) );

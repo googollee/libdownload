@@ -70,3 +70,17 @@ ProtocolFactory_unittest_LDADD = \
     ${BOOST_LDFLAGS} \
     ${BOOST_SIGNALS_LIB} \
     $(GLIB_LIBS)
+
+TESTS += DownloadManager_unittest
+check_PROGRAMS += DownloadManager_unittest
+DownloadManager_unittest_SOURCES = DownloadManager_unittest.cpp
+DownloadManager_unittest_CPPFLAGS = ${LIBCURL_CPPFLAGS} ${BOOST_CPPFLAGS} $(GLIB_CFLAGS)
+DownloadManager_unittest_LDADD = \
+    gtest/lib/libgtest_main.la \
+    $(top_srcdir)/src/libdownload.la \
+    $(top_srcdir)/src/protocols/libprotocols.la \
+    $(top_srcdir)/src/utility/libutility.la \
+    ${LIBCURL_LIBS} \
+    ${BOOST_LDFLAGS} \
+    ${BOOST_SIGNALS_LIB} \
+    $(GLIB_LIBS)
