@@ -64,7 +64,7 @@ struct HttpSession
 struct HttpTask
 {
     TaskInfo *info;
-    filesystem::File file;
+    File file;
     HttpConfigure conf;
     HttpTaskState state;
     HttpProtocolData *d; // a reference

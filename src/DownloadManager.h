@@ -15,7 +15,7 @@
 class Task
 {
 public:
-    int         id()           { return (int)info_; }
+    void*       id()           { return info_; }
     const char* uri()          { return info_->uri.c_str(); }
     const char* outputPath()   { return info_->outputPath.c_str(); }
     const char* outputname()   { return info_->outputName.c_str(); }

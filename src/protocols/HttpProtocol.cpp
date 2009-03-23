@@ -111,7 +111,7 @@ size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession *ses)
         // got the file size from server.
         if (totalSize > size_t(ses->length))
             shouldWrite = ses->length;
-        task->file.seek(ses->pos, filesystem::FromBegin);
+        task->file.seek(ses->pos, SF_FromBegin);
     }
 
     const size_t writed = task->file.write(buffer, shouldWrite);
@@ -246,10 +246,10 @@ void HttpProtocolData::initTask(HttpTask *task)
 
     if (info->totalSize == 0)
     {
-        filesystem::File::remove(output.c_str());
+        File::remove(output.c_str());
     }
 
-    task->file.open(output.c_str(), filesystem::Create | filesystem::Write);
+    task->file.open(output.c_str(), OF_Create | OF_Write);
     if (!task->file.isOpen())
         throw DOWNLOADEXCEPTION(FAIL_OPEN_FILE, "HTTP", strerror(FAIL_OPEN_FILE));
     snprintf(logBuffer, 63, "File path: %s", output.c_str());
@@ -412,7 +412,7 @@ void HttpProtocolData::loadTask(HttpTask *task, std::string &data)
     parser.feed(data.c_str());
     if (parser.getError(NULL) != NULL)
     {
-        LOG(0, "load task %p error: %s\n", parser.getError(NULL));
+        LOG(0, "load task %p error: %s\n", task, parser.getError(NULL));
         throw DOWNLOADEXCEPTION(XML_PARSE_ERROR, "HTTP", parser.getError(NULL));
     }
     parser.finish();
@@ -583,7 +583,7 @@ void HttpProtocolData::checkTasks()
 
 void HttpProtocolData::makeSession(HttpTask *task, size_t begin, size_t len)
 {
-    LOG(0, "make task %d session from %lu, len %lu\n", task->info->id, begin, len);
+    LOG(0, "make task %p session from %lu, len %lu\n", task->info, begin, len);
     char logBuffer[64] = {0};
     snprintf(logBuffer, 63, "make new session from %lu, len %lu", begin, len);
     p->taskLog(task->info, logBuffer);
@@ -632,7 +632,7 @@ void HttpProtocolData::makeSession(HttpTask *task, size_t begin, size_t len)
 void HttpProtocolData::removeSession(HttpSession *ses)
 {
     HttpTask *task = ses->t;
-    LOG(0, "remove task %d session from %lu, len %d\n", task->info->id, ses->pos, ses->length);
+    LOG(0, "remove task %p session from %lu, len %d\n", task->info, ses->pos, ses->length);
 
     Sessions::iterator it = std::find(task->sessions.begin(),
                                       task->sessions.end(),
@@ -982,7 +982,7 @@ void HttpProtocol::removeTask(TaskInfo *info)
     Tasks::iterator it = d->tasks.find(info);
     if (it == d->tasks.end())
     {
-        LOG(0, "id %d doesn't exist\n", id);
+        LOG(0, "task %p doesn't exist\n", info);
         taskError(NULL, TASK_NOT_EXIST);
         return;
     }
@@ -1002,7 +1002,7 @@ bool HttpProtocol::hasTask(TaskInfo *info)
 
 void HttpProtocol::controlTask(TaskInfo *info, ControlFlag f, const char *cmd, void *value)
 {
-    LOG(0, "enter controlTask, info = %p, flag = %d, cmd = %s, value = %s\n",
+    LOG(0, "enter controlTask, info = %p, flag = %d, cmd = %s, value = %p\n",
         info, f, cmd, value);
     LOG(0, "no control when http protocol working.");
 }

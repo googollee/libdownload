@@ -5,32 +5,20 @@
 
 #include <stdio.h>
 
-namespace filesystem
-{
-
-//using namespace boost::filesystem;
-
 enum OpenFlag
 {
-    Read     = 0x1,
-    Write    = 0x2,
-    Create   = 0x4,
-    Truncate = 0x8,
+    OF_Read     = 0x1,
+    OF_Write    = 0x2,
+    OF_Create   = 0x4,
+    OF_Truncate = 0x8,
 };
 
 enum SeekFlag
 {
-    FromBegin   = 0,
-    FromCurrent = 1,
-    FromEnd     = 2,
+    SF_FromBegin   = 0,
+    SF_FromCurrent = 1,
+    SF_FromEnd     = 2,
 };
-
-}
-
-#include "FilePosixApi.h"
-
-namespace filesystem
-{
 
 template <typename T>
 class FileBase : private Noncopiable
@@ -58,14 +46,12 @@ private:
     T data;
 };
 
-typedef FileBase<FilePosixApi> File;
-
 template <typename T>
-inline File::FileBase<T>::FileBase()
+inline FileBase<T>::FileBase()
 {}
 
 template <typename T>
-inline File::FileBase<T>::FileBase(const char *name, int flag)
+inline FileBase<T>::FileBase(const char *name, int flag)
 {
     if ( !data.open(name, flag) )
     {
@@ -75,7 +61,7 @@ inline File::FileBase<T>::FileBase(const char *name, int flag)
 }
 
 template <typename T>
-inline File::FileBase<T>::~FileBase()
+inline FileBase<T>::~FileBase()
 {
     if (isOpen())
     {
@@ -84,7 +70,7 @@ inline File::FileBase<T>::~FileBase()
 }
 
 template <typename T>
-inline void File::FileBase<T>::remove(const char *name)
+inline void FileBase<T>::remove(const char *name)
 {
     if ( !T::remove(name) )
     {
@@ -94,7 +80,7 @@ inline void File::FileBase<T>::remove(const char *name)
 }
 
 template <typename T>
-inline void File::FileBase<T>::open(const char *name, int flag)
+inline void FileBase<T>::open(const char *name, int flag)
 {
     if ( !data.open(name, flag) )
     {
@@ -104,13 +90,13 @@ inline void File::FileBase<T>::open(const char *name, int flag)
 }
 
 template <typename T>
-inline bool File::FileBase<T>::isOpen()
+inline bool FileBase<T>::isOpen()
 {
     return data.isOpen();
 }
 
 template <typename T>
-inline void File::FileBase<T>::close()
+inline void FileBase<T>::close()
 {
     if ( !data.close() )
     {
@@ -120,7 +106,7 @@ inline void File::FileBase<T>::close()
 }
 
 template <typename T>
-inline void File::FileBase<T>::resize(size_t len)
+inline void FileBase<T>::resize(size_t len)
 {
     if ( !data.resize(len) )
     {
@@ -130,7 +116,7 @@ inline void File::FileBase<T>::resize(size_t len)
 }
 
 template <typename T>
-inline size_t File::FileBase<T>::read(void *buffer, size_t max)
+inline size_t FileBase<T>::read(void *buffer, size_t max)
 {
     size_t ret = 0;
     if ( !data.read(buffer, max, &ret) )
@@ -142,7 +128,7 @@ inline size_t File::FileBase<T>::read(void *buffer, size_t max)
 }
 
 template <typename T>
-inline size_t File::FileBase<T>::write(const void *buffer, size_t len)
+inline size_t FileBase<T>::write(const void *buffer, size_t len)
 {
     size_t ret = 0;
     if ( !data.write(buffer, len, &ret) )
@@ -154,7 +140,7 @@ inline size_t File::FileBase<T>::write(const void *buffer, size_t len)
 }
 
 template <typename T>
-inline void File::FileBase<T>::seek(size_t pos, SeekFlag flag)
+inline void FileBase<T>::seek(size_t pos, SeekFlag flag)
 {
     if ( !data.seek(pos, flag) )
     {
@@ -164,17 +150,17 @@ inline void File::FileBase<T>::seek(size_t pos, SeekFlag flag)
 }
 
 template <typename T>
-inline bool File::FileBase<T>::seekWithLengthCheck(size_t pos)
+inline bool FileBase<T>::seekWithLengthCheck(size_t pos)
 {
-    seek(0, FromEnd);
+    seek(0, SF_FromEnd);
     if ( pos > tell() )
         return false;
-    seek(pos, FromBegin);
+    seek(pos, SF_FromBegin);
     return true;
 }
 
 template <typename T>
-inline size_t File::FileBase<T>::tell()
+inline size_t FileBase<T>::tell()
 {
     size_t ret;
     if ( !data.tell(&ret) )
@@ -185,6 +171,8 @@ inline size_t File::FileBase<T>::tell()
     return ret;
 }
 
-}
+#include "FilePosixApi.h"
+
+typedef FileBase<FilePosixApi> File;
 
 #endif

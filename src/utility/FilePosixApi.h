@@ -10,9 +10,6 @@
 #include <errno.h>
 #include <string.h>
 
-namespace filesystem
-{
-
 class FilePosixApi : private Noncopiable
 {
 public:
@@ -43,15 +40,15 @@ private:
 inline int FilePosixApi::convOpenFlagToNative(int flag)
 {
     int ret = 0;
-    if ( (flag & Read) != 0 && (flag & Write) == 0 )
+    if ( (flag & OF_Read) != 0 && (flag & OF_Write) == 0 )
         ret |= O_RDONLY;
-    if ( (flag & Read) == 0 && (flag & Write) != 0 )
+    if ( (flag & OF_Read) == 0 && (flag & OF_Write) != 0 )
         ret |= O_WRONLY;
-    if ( (flag & Read) != 0 && (flag & Write) != 0 )
+    if ( (flag & OF_Read) != 0 && (flag & OF_Write) != 0 )
         ret |= O_RDWR;
-    if ( (flag & Create) != 0 )
+    if ( (flag & OF_Create) != 0 )
         ret |= O_CREAT;
-    if ( (flag & Truncate) != 0 )
+    if ( (flag & OF_Truncate) != 0 )
         ret |= O_TRUNC;
 
     return ret;
@@ -151,8 +148,6 @@ inline bool FilePosixApi::tell(size_t *ret)
     }
     *ret = size_t(pos);
     return true;
-}
-
 }
 
 #endif

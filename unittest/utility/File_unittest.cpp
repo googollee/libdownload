@@ -2,17 +2,15 @@
 
 #include <gtest/gtest.h>
 
-namespace fs=filesystem;
-
 TEST(FileTest, Create)
 {
-    fs::File f("./test.file", fs::Create | fs::Write);
+    File f("./test.file", OF_Create | OF_Write);
     f.close();
 }
 
 TEST(FileTest, Resize)
 {
-    fs::File f("./test.file", fs::Create | fs::Write);
+    File f("./test.file", OF_Create | OF_Write);
     f.resize(10);
     f.close();
 }
@@ -21,7 +19,7 @@ TEST(FileTest, Remove)
 {
     try
     {
-        fs::File::remove("./test.file");
+        File::remove("./test.file");
     }
     catch (DownloadException &e)
     {
