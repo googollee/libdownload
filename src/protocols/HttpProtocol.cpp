@@ -740,6 +740,26 @@ bool HttpProtocol::canProcess(const char *uri)
     return true;
 }
 
+const char* HttpProtocol::getOptionsDetail()
+{
+    return
+        "<SessionNumber>"
+        "<title>Session number</title>"
+        "<desc>How many sessions in one task</desc>"
+        "<format>int:1-</format>"
+        "</SessionNumber>"
+        "<MinSessionBlocks>"
+        "<title>Min session blocks</title>"
+        "<desc>The minimum blocks of one session</desc>"
+        "<format>int:1-</format>"
+        "</MinSessionBlocks>"
+        "<BytesPerBlock>"
+        "<title>Bytes per block</title>"
+        "<desc>How many bytes in a block</desc>"
+        "<format>int:1-</format>"
+        "</BytesPerBlock>";
+}
+
 const char* HttpProtocol::getTaskOptions(const char *uri)
 {
     HttpConfigure defaultConf;

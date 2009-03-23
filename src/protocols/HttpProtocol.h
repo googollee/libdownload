@@ -15,6 +15,7 @@ public:
 
     virtual const char* name();
     virtual bool        canProcess(const char *uri);
+    virtual const char* getOptionsDetail();
     virtual const char* getTaskOptions(const char *uri);
 
     virtual void loadOptions(std::istream &in);
