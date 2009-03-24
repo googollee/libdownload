@@ -63,10 +63,7 @@ inline FileBase<T>::FileBase(const char *name, int flag)
 template <typename T>
 inline FileBase<T>::~FileBase()
 {
-    if (isOpen())
-    {
-        close();
-    }
+    close();
 }
 
 template <typename T>
@@ -98,6 +95,11 @@ inline bool FileBase<T>::isOpen()
 template <typename T>
 inline void FileBase<T>::close()
 {
+    if (!isOpen())
+    {
+        return;
+    }
+
     if ( !data.close() )
     {
         int err = T::getLastError();

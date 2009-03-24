@@ -362,10 +362,11 @@ void HttpProtocolData::removeTask(const Tasks::iterator &taskIt)
         ses->handle = NULL;
         ses->pos = 0;
         ses->length = 0;
+
+        delete ses;
     }
     task->sessions.clear();
-
-    task->file.close();
+    // task->file will be automatically closed.
 
     delete task;
 }
@@ -701,6 +702,9 @@ HttpProtocol::~HttpProtocol()
         throw DOWNLOADEXCEPTION(retm, "CURLM", curl_multi_strerror(retm));
 
     curl_global_cleanup();
+
+    if (d->retBuffer != NULL)
+        delete [] d->retBuffer;
 }
 
 const char* HttpProtocol::name()
@@ -775,14 +779,13 @@ const char* HttpProtocol::getTaskOptions(const char *uri)
         % defaultConf.bytesPerBlock
         );
 
-    static char *ret = NULL;
-    if (ret != NULL)
-        delete [] ret;
+    if (d->retBuffer != NULL)
+        delete [] d->retBuffer;
 
-    ret = new char[buf.length() + 1];
-    strcpy(ret, buf.c_str());
+    d->retBuffer = new char[buf.length() + 1];
+    strcpy(d->retBuffer, buf.c_str());
 
-    return ret;
+    return d->retBuffer;
 }
 
 void HttpProtocol::loadOptions(std::istream &in)
@@ -881,14 +884,13 @@ const char* HttpProtocol::getAllOptions()
         % defaultConf.bytesPerBlock
         );
 
-    static char *ret = NULL;
-    if (ret != NULL)
-        delete [] ret;
+    if (d->retBuffer != NULL)
+        delete [] d->retBuffer;
 
-    ret = new char[buf.length() + 1];
-    strcpy(ret, buf.c_str());
+    d->retBuffer = new char[buf.length() + 1];
+    strcpy(d->retBuffer, buf.c_str());
 
-    return ret;
+    return d->retBuffer;
 }
 
 void HttpProtocol::addTask(TaskInfo *info)

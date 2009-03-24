@@ -8,7 +8,7 @@
 
 void ErrorCallback(TaskInfo *info, int error)
 {
-    printf("%s task %p error: (%d)%s\n", info->protocol->name(), info, error, info->protocol->strerror(error));
+    printf("task %p error: %d\n", info, error);
 }
 
 void DownloadFinishCallback(TaskInfo *info)
@@ -75,6 +75,7 @@ TEST(HttpTest, AddTask)
         printf("catch exception: %s:%u error %d in %s: %s\n",
                e.file(), e.lineoff(),
                e.error(), e.component(), e.what());
+        throw;
     }
 }
 
@@ -112,6 +113,7 @@ TEST(HttpTest, AddTaskWithOptions)
         printf("catch exception: %s:%u error %d in %s: %s\n",
                e.file(), e.lineoff(),
                e.error(), e.component(), e.what());
+        throw;
     }
 }
 
@@ -160,6 +162,7 @@ TEST(HttpTest, NormalDownload)
         printf("catch exception: %s:%u error %d in %s: %s\n",
                e.file(), e.lineoff(),
                e.error(), e.component(), e.what());
+        throw;
     }
 }
 
@@ -212,6 +215,7 @@ TEST(HttpTest, SaveLoadDownload)
         printf("catch exception: %s:%u error %d in %s: %s\n",
                e.file(), e.lineoff(),
                e.error(), e.component(), e.what());
+        throw;
     }
 
     try
@@ -251,6 +255,7 @@ TEST(HttpTest, SaveLoadDownload)
         printf("catch exception: %s:%u error %d in %s: %s\n",
                e.file(), e.lineoff(),
                e.error(), e.component(), e.what());
+        throw;
     }
 }
 
@@ -299,5 +304,6 @@ TEST(HttpTest, DownloadZeroFile)
         printf("catch exception: %s:%u error %d in %s: %s\n",
                e.file(), e.lineoff(),
                e.error(), e.component(), e.what());
+        throw;
     }
 }

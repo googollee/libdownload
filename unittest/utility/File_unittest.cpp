@@ -2,6 +2,12 @@
 
 #include <gtest/gtest.h>
 
+TEST(FileTest, NotOpenFile)
+{
+    File f;
+    f.close();
+}
+
 TEST(FileTest, Create)
 {
     File f("./test.file", OF_Create | OF_Write);
@@ -26,5 +32,6 @@ TEST(FileTest, Remove)
         printf("catch exception: %s:%u error %d in %s: %s\n",
                e.file(), e.lineoff(),
                e.error(), e.component(), e.what());
+        throw;
     }
 }
