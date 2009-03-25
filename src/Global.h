@@ -31,6 +31,7 @@ struct TaskInfo
     // no need save below
     size_t totalSize;
     size_t downloadSize;
+
     size_t uploadSize;
 
     BitMap validMap;

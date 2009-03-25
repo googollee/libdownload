@@ -118,6 +118,8 @@ bool DownloadManager::removeTask(Task task)
     if (std::find(d->tasks.begin(), d->tasks.end(), task.info_) != d->tasks.end())
     {
         task.info_->protocol->removeTask(task.info_);
+        delete task.info_;
+
         return true;
     }
 
@@ -178,7 +180,7 @@ void DownloadManager::save(std::ostream &out)
 
 int DownloadManager::perform()
 {
-    LOG(0, "enter DownloadManager::perform, downlaod = %p, upload = %p\n", download, upload);
+//    LOG(0, "enter DownloadManager::perform()\n");
 
     int ret = 0;
     for (ProtocolFactory::Protocols::iterator it = d->factory->protocols_.begin();
