@@ -87,7 +87,6 @@ struct HttpProtocolData
     Tasks tasks;
     int running;
     Sessions finishSessions;
-    char *retBuffer;
 
     void initTask(HttpTask *task);
     void removeTask(const Tasks::iterator &it);
@@ -106,8 +105,7 @@ struct HttpProtocolData
     HttpProtocolData()
         : p(NULL),
           handle(NULL),
-          running(0),
-          retBuffer(NULL)
+          running(0)
         {}
 };
 

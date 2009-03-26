@@ -628,9 +628,6 @@ HttpProtocol::~HttpProtocol()
         throw DOWNLOADEXCEPTION(retm, "CURLM", curl_multi_strerror(retm));
 
     curl_global_cleanup();
-
-    if (d->retBuffer != NULL)
-        delete [] d->retBuffer;
 }
 
 const char* HttpProtocol::name()
