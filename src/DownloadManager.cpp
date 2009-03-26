@@ -134,7 +134,7 @@ bool DownloadManager::startTask(Task task)
     {
         if ( (task.info_->state == TASK_FINISH) || (task.info_->state == TASK_DOWNLOAD) )
         {
-            LOG(0, "task %d state is %d, can't start\n", task.id(), task.info_->state);
+            LOG(0, "task %p state is %d, can't start\n", task.id(), task.info_->state);
             return false;
         }
 
@@ -155,7 +155,7 @@ bool DownloadManager::stopTask(Task task)
     {
         if (task.info_->state != TASK_DOWNLOAD)
         {
-            LOG(0, "task %d state is %d, can't stop\n", task.id(), task.info_->state);
+            LOG(0, "task %p state is %d, can't stop\n", task.id(), task.info_->state);
             return false;
         }
 

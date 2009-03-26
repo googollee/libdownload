@@ -42,7 +42,6 @@
 
 #include <utility/File.h>
 #include <utility/DownloadException.h>
-#include <utility/SimpleXmlParser.h>
 
 #include <curl/curl.h>
 
@@ -140,92 +139,6 @@ std::string getFileName(CURL *handle, const std::string &uri)
     size_t p = uri.find_last_of("*|\\:\"<>?/") + 1;
     return uri.substr(p);
 }
-
-class HttpConfXmlParser : public SimpleXmlParser
-{
-private:
-    void text(const char *text,
-              size_t textLen)
-        {
-            while ( (*text == ' ') || (*text == '\n') )
-            {
-                ++text;
-                --textLen;
-                if (*text == '\0')
-                    break;
-            }
-            while ( (text[textLen-1]  == ' ') || (text[textLen-1] == '\n') )
-            {
-                --textLen;
-                if (textLen == 0)
-                    break;
-            }
-
-            std::string data(text, textLen);
-            if (strcmp(getElement(), "SessionNumber") == 0)
-            {
-                conf.sessionNumber = atoi(data.c_str());
-            }
-            else if (strcmp(getElement(), "MinSessionBlocks") == 0)
-            {
-                conf.minSessionBlocks = atoi(data.c_str());
-            }
-            else if (strcmp(getElement(), "BytesPerBlock") == 0)
-            {
-                conf.bytesPerBlock = atoi(data.c_str());
-            }
-            else if (strcmp(getElement(), "TotalSize") == 0)
-            {
-                totalSize = atoi(data.c_str());
-            }
-            else if (strcmp(getElement(), "BitMap") == 0)
-            {
-                downloadMap = BitMap(totalSize, conf.bytesPerBlock);
-                size_t finishSize = 0;
-                for (int i=0, n=data.length()-1; i<n; ++i)
-                {
-                    if (data[i] == '1')
-                    {
-                        downloadMap.set(i, true);
-                        finishSize += conf.bytesPerBlock;
-                    }
-                    else
-                    {
-                        downloadMap.set(i, false);
-                    }
-                }
-                int i = data.length() - 1;
-                if (data[i] == '1')
-                {
-                    // need calculate last block seperately.
-                    downloadMap.set(i, true);
-                    finishSize += totalSize - (i * conf.bytesPerBlock);
-                }
-                else
-                {
-                    downloadMap.set(i, false);
-                }
-                downloadSize = finishSize;
-            }
-            else
-            {
-                LOG(0, "can't handle <%s>%s</%s>\n", getElement(), data.c_str(), getElement());
-            }
-        }
-
-    HttpTask *task_;
-
-public:
-    HttpConfXmlParser()
-        : totalSize(0),
-          downloadSize(0)
-        {}
-
-    HttpConfigure conf;
-    size_t totalSize;
-    size_t downloadSize;
-    BitMap downloadMap;
-};
 
 void HttpProtocolData::initTask(HttpTask *task)
 {
@@ -383,10 +296,10 @@ void HttpProtocolData::saveTask(const Tasks::iterator &taskIt, std::string &data
 
     std::stringstream out;
     out << boost::format(
-        "<SessionNumber>%d</SessionNumber>\n"
-        "<MinSessionBlocks>%d</MinSessionBlocks>\n"
-        "<BytesPerBlock>%d</BytesPerBlock>\n"
-        "<TotalSize>%d</TotalSize>\n"
+        "<SessionNumber>%d</SessionNumber>"
+        "<MinSessionBlocks>%d</MinSessionBlocks>"
+        "<BytesPerBlock>%d</BytesPerBlock>"
+        "<TotalSize>%d</TotalSize>"
         "<BitMap>")
         % task->conf.sessionNumber
         % task->conf.minSessionBlocks
@@ -418,10 +331,19 @@ void HttpProtocolData::loadTask(HttpTask *task, std::string &data)
     }
     parser.finish();
 
-    task->conf = parser.conf;
-    info->totalSize = parser.totalSize;
-    info->downloadSize = parser.downloadSize;
-    info->downloadMap = parser.downloadMap;
+    if (parser.conf.sessionNumber > 0)
+        task->conf.sessionNumber = parser.conf.sessionNumber;
+    if (parser.conf.minSessionBlocks > 0)
+        task->conf.minSessionBlocks = parser.conf.minSessionBlocks;
+    if (parser.conf.bytesPerBlock > 0)
+        task->conf.bytesPerBlock = parser.conf.bytesPerBlock;
+    if (parser.totalSize > 0)
+        info->totalSize = parser.totalSize;
+    if (parser.downloadMap.size() > 0)
+    {
+        info->downloadSize = parser.downloadSize;
+        info->downloadMap = parser.downloadMap;
+    }
 }
 
 bool findNonDownload(HttpTask *task, size_t *begin, size_t *len)
@@ -677,6 +599,10 @@ HttpProtocol::HttpProtocol()
     LOG(0, "enter HttpProtocol ctor\n");
 
     d->p = this;
+    d->defaultConf.sessionNumber    = HttpConfigure::DefaultSessionNumber;
+    d->defaultConf.minSessionBlocks = HttpConfigure::DefaultMinSessionBlocks;
+    d->defaultConf.bytesPerBlock    = HttpConfigure::DefaultBytesPerBlock;
+
 
     CURLcode rete = curl_global_init(CURL_GLOBAL_ALL);
     if (rete != CURLE_OK)
@@ -748,149 +674,61 @@ const char* HttpProtocol::getOptionsDetail()
 {
     return
         "<SessionNumber>"
-        "<title>Session number</title>"
-        "<desc>How many sessions in one task</desc>"
-        "<format>int:1-</format>"
+            "<title>Session number</title>"
+            "<desc>How many sessions in one task</desc>"
+            "<format>int:1-</format>"
         "</SessionNumber>"
         "<MinSessionBlocks>"
-        "<title>Min session blocks</title>"
-        "<desc>The minimum blocks of one session</desc>"
-        "<format>int:1-</format>"
+            "<title>Min session blocks</title>"
+            "<desc>The minimum blocks of one session</desc>"
+            "<format>int:1-</format>"
         "</MinSessionBlocks>"
         "<BytesPerBlock>"
-        "<title>Bytes per block</title>"
-        "<desc>How many bytes in a block</desc>"
-        "<format>int:1-</format>"
+            "<title>Bytes per block</title>"
+            "<desc>How many bytes in a block</desc>"
+            "<format>int:1-</format>"
         "</BytesPerBlock>";
+}
+
+const char* HttpProtocol::getOptions()
+{
+    static char buffer[64];
+
+    snprintf(buffer, 63,
+             "<SessionNumber>%d</SessionNumber>",
+             d->defaultConf.sessionNumber);
+
+    return buffer;
+}
+
+void HttpProtocol::setOptions(const char *options)
+{
+    HttpConfXmlParser parser;
+
+    parser.feed(options);
+    parser.finish();
+
+    if (parser.getError(NULL) != NULL)
+    {
+        char buffer[64] = {0};
+        snprintf(buffer, 63, "setOptions fail: %s", parser.getError(NULL));
+        protocolLog(this, buffer);
+        return;
+    }
+
+    if (parser.conf.sessionNumber > 0)
+        d->defaultConf.sessionNumber = parser.conf.sessionNumber;
 }
 
 const char* HttpProtocol::getTaskOptions(const char *uri)
 {
-    HttpConfigure defaultConf;
-    std::string buf = str(
-        boost::format(
-            "<Protocol>%s</Protocol>\n"
-            "<SessionNumber>%d</SessionNumber>\n"
-            "<MinSessionBlocks>%d</MinSessionBlocks>\n"
-            "<BytesPerBlock>%d</BytesPerBlock>")
-        % name()
-        % defaultConf.sessionNumber
-        % defaultConf.minSessionBlocks
-        % defaultConf.bytesPerBlock
-        );
+    static char buffer[64];
 
-    if (d->retBuffer != NULL)
-        delete [] d->retBuffer;
+    snprintf(buffer, 63,
+             "<SessionNumber>%d</SessionNumber>",
+             d->defaultConf.sessionNumber);
 
-    d->retBuffer = new char[buf.length() + 1];
-    strcpy(d->retBuffer, buf.c_str());
-
-    return d->retBuffer;
-}
-
-void HttpProtocol::loadOptions(std::istream &in)
-{
-    HttpConfXmlParser parser;
-
-    char buffer[1024];
-    int size = 0;
-    while ( (size = in.readsome(buffer, 1024)) > 0 )
-    {
-        parser.feed(buffer, size);
-
-        if (parser.getError(NULL) != NULL)
-        {
-            break;
-        }
-    }
-    parser.finish();
-
-    if (parser.conf.sessionNumber > 0)
-        HttpConfigure::DefaultSessionNumber = parser.conf.sessionNumber;
-    if (parser.conf.minSessionBlocks > 0)
-        HttpConfigure::DefaultMinSessionBlocks = parser.conf.minSessionBlocks;
-    if (parser.conf.bytesPerBlock > 0)
-        HttpConfigure::DefaultBytesPerBlock = parser.conf.bytesPerBlock;
-}
-
-void HttpProtocol::saveOptions(std::ostream &out)
-{
-    HttpConfigure defaultConf;
-
-    out << boost::format(
-        "<SessionNumber>%d</SessionNumber>\n"
-        "<MinSessionBlocks>%d</MinSessionBlocks>\n"
-        "<BytesPerBlock>%d</BytesPerBlock>")
-        % defaultConf.sessionNumber
-        % defaultConf.minSessionBlocks
-        % defaultConf.bytesPerBlock;
-}
-
-void HttpProtocol::control(ControlFlag f, const char *key, void *value)
-{
-    LOG(0, "enter control, f = %d, key = %p, value = %p\n", f, key, value);
-
-    if (key == NULL)
-    {
-        LOG(0, "key is NULL\n");
-        return;
-    }
-    if (value == NULL)
-    {
-        LOG(0, "value is NULL\n");
-        return;
-    }
-
-    size_t *s = static_cast<size_t*>(value);
-    if ( (f == CF_SET) && (*s == 0) )
-    {
-        LOG(0, "value need be great than 0.\n");
-        return;
-    }
-
-    if (strcmp(key, "SessionNumber") == 0)
-    {
-        if (f == CF_GET)
-            *s = HttpConfigure::DefaultSessionNumber;
-        else if (f == CF_SET)
-            HttpConfigure::DefaultSessionNumber = *s;
-    }
-    else if (strcmp(key, "MinSessionBlocks") == 0)
-    {
-        if (f == CF_GET)
-            *s = HttpConfigure::DefaultMinSessionBlocks;
-        else if (f == CF_SET)
-            HttpConfigure::DefaultMinSessionBlocks = *s;
-    }
-    else if (strcmp(key, "BytesPerBlock") == 0)
-    {
-        if (f == CF_GET)
-            *s = HttpConfigure::DefaultBytesPerBlock;
-        else if (f == CF_SET)
-            HttpConfigure::DefaultBytesPerBlock = *s;
-    }
-}
-
-const char* HttpProtocol::getAllOptions()
-{
-    HttpConfigure defaultConf;
-    std::string buf = str(
-        boost::format(
-            "<SessionNumber>%d</SessionNumber>\n"
-            "<MinSessionBlocks>%d</MinSessionBlocks>\n"
-            "<BytesPerBlock>%d</BytesPerBlock>")
-        % defaultConf.sessionNumber
-        % defaultConf.minSessionBlocks
-        % defaultConf.bytesPerBlock
-        );
-
-    if (d->retBuffer != NULL)
-        delete [] d->retBuffer;
-
-    d->retBuffer = new char[buf.length() + 1];
-    strcpy(d->retBuffer, buf.c_str());
-
-    return d->retBuffer;
+    return buffer;
 }
 
 void HttpProtocol::addTask(TaskInfo *info)
@@ -909,6 +747,7 @@ void HttpProtocol::addTask(TaskInfo *info)
 
     std::auto_ptr<HttpTask> task( new HttpTask(d.get()) );
     task->state = HT_PREPARE;
+    task->conf = d->defaultConf;
     task->info = info;
     info->protocol = this;
     info->downloadSize = 0;
@@ -1022,11 +861,11 @@ bool HttpProtocol::hasTask(TaskInfo *info)
     return it != d->tasks.end();
 }
 
-void HttpProtocol::controlTask(TaskInfo *info, ControlFlag f, const char *cmd, void *value)
+const char* HttpProtocol::getTaskState(TaskInfo *info)
 {
-    LOG(0, "enter controlTask, info = %p, flag = %d, cmd = %s, value = %p\n",
-        info, f, cmd, value);
-    LOG(0, "no control when http protocol working.");
+    LOG(0, "enter getTaskState, info = %p\n", info);
+
+    return "";
 }
 
 void HttpProtocol::getFdSet(fd_set *read_fd_set,

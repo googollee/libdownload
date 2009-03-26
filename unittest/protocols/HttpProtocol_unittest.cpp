@@ -36,15 +36,15 @@ TEST(HttpTest, SetGetGlobalConf)
 {
     HttpProtocol http;
 
-    size_t value = 0;
-    http.control(CF_SET, "SessionNumber", &value);
-    http.control(CF_GET, "SessionNumber", &value);
-    EXPECT_TRUE(value > 0);
+    std::string data = "<SessionNumber>0</SessionNumber>";
+    http.setOptions(data.c_str());
+    std::string result = http.getOptions();
+    EXPECT_EQ(result, "<SessionNumber>5</SessionNumber>");
 
-    value = 100;
-    http.control(CF_SET, "SessionNumber", &value);
-    http.control(CF_GET, "SessionNumber", &value);
-    EXPECT_EQ(value, 100u);
+    data = "<SessionNumber>100</SessionNumber>";
+    http.setOptions(data.c_str());
+    result = http.getOptions();
+    EXPECT_EQ(result, data);
 }
 
 TEST(HttpTest, AddTask)

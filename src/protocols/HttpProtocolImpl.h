@@ -2,7 +2,9 @@
 #define HTTP_PROTOCOL_IMPL_HEADER
 
 #include "HttpProtocol.h"
-#include "utility/File.h"
+
+#include <utility/File.h>
+#include <utility/SimpleXmlParser.h>
 
 #include <curl/curl.h>
 
@@ -19,24 +21,20 @@ typedef std::vector<HttpSession*> Sessions;
 
 struct HttpConfigure
 {
-    static int DefaultSessionNumber;
-    static int DefaultMinSessionBlocks;
-    static int DefaultBytesPerBlock;
+    static const int DefaultSessionNumber    = 5;
+    static const int DefaultMinSessionBlocks = 100;
+    static const int DefaultBytesPerBlock    = 512;
 
     int sessionNumber;
     int minSessionBlocks;
     int bytesPerBlock;
 
     HttpConfigure()
-        : sessionNumber(DefaultSessionNumber),
-          minSessionBlocks(DefaultMinSessionBlocks),
-          bytesPerBlock(DefaultBytesPerBlock)
+        : sessionNumber(0),
+          minSessionBlocks(0),
+          bytesPerBlock(0)
         {}
 };
-
-int HttpConfigure::DefaultSessionNumber = 5;
-int HttpConfigure::DefaultMinSessionBlocks = 100;
-int HttpConfigure::DefaultBytesPerBlock = 512;
 
 enum HttpTaskState
 {
@@ -48,33 +46,35 @@ enum HttpTaskState
 
 struct HttpSession
 {
+    HttpTask *t; // a reference.
+
     CURL *handle;
     size_t pos;
     int length;  // -1 mean unknow length.
-    HttpTask *t; // a reference.
 
     HttpSession(HttpTask *task)
-        : handle(NULL),
+        : t(task),
+          handle(NULL),
           pos(0),
-          length(-1),
-          t(task)
+          length(-1)
         {}
 };
 
 struct HttpTask
 {
+    HttpProtocolData *d; // a reference
+
     TaskInfo *info;
     File file;
     HttpConfigure conf;
     HttpTaskState state;
-    HttpProtocolData *d; // a reference
 
     Sessions sessions;
 
     HttpTask(HttpProtocolData *data)
-        : info(NULL),
-          state(HT_INVALID),
-          d(data)
+        : d(data),
+          info(NULL),
+          state(HT_INVALID)
         {}
 };
 
@@ -83,6 +83,7 @@ struct HttpProtocolData
     HttpProtocol *p; // a reference
 
     CURLM *handle;
+    HttpConfigure defaultConf;
     Tasks tasks;
     int running;
     Sessions finishSessions;
@@ -108,6 +109,94 @@ struct HttpProtocolData
           running(0),
           retBuffer(NULL)
         {}
+};
+
+class HttpConfXmlParser : public SimpleXmlParser
+{
+private:
+    void text(const char *text,
+              size_t textLen)
+        {
+            while ( (*text == ' ') || (*text == '\n') )
+            {
+                ++text;
+                --textLen;
+                if (*text == '\0')
+                    break;
+            }
+            while ( (text[textLen-1]  == ' ') || (text[textLen-1] == '\n') )
+            {
+                --textLen;
+                if (textLen == 0)
+                    break;
+            }
+
+            std::string data(text, textLen);
+            if (strcmp(getElement(), "SessionNumber") == 0)
+            {
+                conf.sessionNumber = atoi(data.c_str());
+            }
+            else if (strcmp(getElement(), "MinSessionBlocks") == 0)
+            {
+                conf.minSessionBlocks = atoi(data.c_str());
+            }
+            else if (strcmp(getElement(), "BytesPerBlock") == 0)
+            {
+                conf.bytesPerBlock = atoi(data.c_str());
+            }
+            else if (strcmp(getElement(), "TotalSize") == 0)
+            {
+                totalSize = atoi(data.c_str());
+            }
+            else if (strcmp(getElement(), "BitMap") == 0)
+            {
+                downloadMap = BitMap(totalSize, conf.bytesPerBlock);
+                size_t finishSize = 0;
+                for (int i=0, n=data.length()-1; i<n; ++i)
+                {
+                    if (data[i] == '1')
+                    {
+                        downloadMap.set(i, true);
+                        finishSize += conf.bytesPerBlock;
+                    }
+                    else
+                    {
+                        downloadMap.set(i, false);
+                    }
+                }
+                int i = data.length() - 1;
+                if (data[i] == '1')
+                {
+                    // need calculate last block seperately.
+                    downloadMap.set(i, true);
+                    finishSize += totalSize - (i * conf.bytesPerBlock);
+                }
+                else
+                {
+                    downloadMap.set(i, false);
+                }
+                downloadSize = finishSize;
+            }
+            else
+            {
+                LOG(0, "can't handle <%s>%s</%s>\n", getElement(), data.c_str(), getElement());
+            }
+        }
+
+    HttpTask *task_;
+
+public:
+    HttpConfXmlParser()
+        : totalSize(0),
+          downloadSize(0)
+        {
+            memset(&conf, sizeof(conf), 0);
+        }
+
+    HttpConfigure conf;
+    size_t totalSize;
+    size_t downloadSize;
+    BitMap downloadMap;
 };
 
 #endif

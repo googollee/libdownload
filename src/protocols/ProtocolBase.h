@@ -113,16 +113,6 @@ public:
     virtual const char* name() = 0;
 
     /**
-     * \brief Check whether uri can be handled with this protocol.
-     *
-     * Check whether uri can be handled by this protocol.
-     *
-     * \param uri The uri need check. It should be in utf8 codec
-     * \return The check result.
-     */
-    virtual bool canProcess    (const char *uri) = 0;
-
-    /**
      * \brief Get the options detail description.
      *
      * Get the options detail description in XML. The XML format is like:
@@ -140,6 +130,38 @@ public:
      * \todo Doesn't sure the format of option format now, should use some thing easy convert to html.
      */
     virtual const char* getOptionsDetail() = 0;
+
+    /**
+     * \brief Get protocol's option.
+     *
+     * Get protocols options. It used to resume the protocol status when relaunch.
+     * It's different like the task options which can be different in different task. It's the global options of protocol or default value of task options, shared with all tasks.
+     *
+     * \return The options.
+     * \see saveOptions()
+     */
+    virtual const char* getOptions() = 0;
+
+    /**
+     * \brief Set protocol's option.
+     *
+     * Set protocols option. It used to resume the protocol status when relaunch.
+     * It's different like the task options which can be different in different task. It's the global options of protocol or default value of task options, shared with all tasks.
+     *
+     * \param options The options.
+     * \see loadOptions()
+     */
+    virtual void setOptions(const char *options) = 0;
+
+    /**
+     * \brief Check whether uri can be handled with this protocol.
+     *
+     * Check whether uri can be handled by this protocol.
+     *
+     * \param uri The uri need check. It should be in utf8 codec
+     * \return The check result.
+     */
+    virtual bool canProcess(const char *uri) = 0;
 
     /**
      * \brief Get the options when adding uri as task.
@@ -162,61 +184,6 @@ public:
     virtual const char* getTaskOptions(const char *uri) = 0;
 
     /**
-     * \brief Load protocol's option.
-     *
-     * Load protocols option from istream. It used to resume the protocol status when relaunch.
-     * It's different like the task options which can be different in different task. It's the global options of protocol or default value of task options, shared with all tasks.
-     *
-     * \param in The input stream.
-     * \see saveOptions()
-     */
-    virtual void loadOptions(std::istream &in) = 0;
-
-    /**
-     * \brief Save protocol's option.
-     *
-     * Save protocols option to ostream. It used to resume the protocol status when relaunch.
-     * It's different like the task options which can be different in different task. It's the global options of protocol or default value of task options, shared with all tasks.
-     *
-     * \param out The output stream.
-     * \see loadOptions()
-     */
-    virtual void saveOptions(std::ostream &out) = 0;
-
-    /**
-     * \brief Return the all options for protocol.
-     * Return the all options for protocol. For example, max opened socket.
-     *
-     * Return text like below:
-     * \code
-     * <OptionName1>value1</OptionName1>
-     * <OptionName2>value2</OptionName2>
-     * \endcode
-     *
-     * \return The XML text of all options.
-     * \see saveOptions()
-     * \see control()
-     * \todo Maybe can merge with saveOptions() or control().
-     */
-    virtual const char* getAllOptions() = 0;
-
-    /**
-     * \brief Control the protocol options.
-     *
-     * Control the protocol property.
-     * cmd format, e.g.:
-     * f = CF_SET, key = "SessionNumber", value point to a size_t variable.
-     * HttpProtocol will set the default session number per task as value.
-     *
-     * \notice No standard command now.
-     *
-     * \param f Control flag, set or get.
-     * \param key The string indicate which option need be controlled.
-     * \param value Point to the variable.
-     */
-    virtual void control(ControlFlag f, const char* key, void *value) = 0;
-
-    /**
      * \brief Add a task.
      *
      * TaskInfo is controled by manager, can modify in protocol
@@ -224,21 +191,14 @@ public:
      *
      * \param info The task info.
      */
-    virtual void addTask      (TaskInfo *info) = 0;
-
-    /**
-     * \brief Flush the process data into info->processData
-     *
-     * \param info The task info.
-     */
-    virtual void flushTask    (TaskInfo *info) = 0;
+    virtual void addTask(TaskInfo *info) = 0;
 
     /**
      * \brief Stop and remove a task.
      *
      * \param info The task info.
      */
-    virtual void removeTask   (TaskInfo *info) = 0;
+    virtual void removeTask(TaskInfo *info) = 0;
 
     /**
      * \brief Check if a task is processing.
@@ -246,23 +206,24 @@ public:
      * \param info The task info.
      * \return The check result.
      */
-    virtual bool hasTask      (TaskInfo *info) = 0;
+    virtual bool hasTask(TaskInfo *info) = 0;
 
     /**
-     * \brief Control the task options.
+     * \brief Flush the process data into info->processData
      *
-     * Control the task property.
-     * cmd format, e.g.:
-     * f = CF_SET, key = "SessionNumber", value point to a size_t variable.
-     * HttpProtocol will set the default session number per task as value.
-     *
-     * \notice No standard command now.
-     *
-     * \param f Control flag, set or get.
-     * \param key The string indicate which option need be controlled.
-     * \param value Point to the variable.
+     * \param info The task info.
      */
-    virtual void controlTask  (TaskInfo *info, ControlFlag f, const char* key, void *value) = 0;
+    virtual void flushTask(TaskInfo *info) = 0;
+
+    /**
+     * \brief Get the task state.
+     *
+     * Get the task detail state, maybe the session position, or percentage of each session.
+     *
+     * \param info The task info.
+     * \return The state detail of task.
+     */
+    virtual const char* getTaskState(TaskInfo *info) = 0;
 
     /**
      * \brief Extracts file descriptor information.
