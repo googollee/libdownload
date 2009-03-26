@@ -30,6 +30,9 @@ TEST(HttpTest, CanProcessTest)
 {
     HttpProtocol http;
     EXPECT_EQ(http.canProcess("http://xxx"), true);
+    EXPECT_EQ(http.canProcess("https://xxx"), false);
+    EXPECT_EQ(http.canProcess("ftp://xxx"), false);
+    EXPECT_EQ(http.canProcess("someother://xxx"), false);
 }
 
 TEST(HttpTest, SetGetGlobalConf)
