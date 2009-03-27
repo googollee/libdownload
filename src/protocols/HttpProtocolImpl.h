@@ -21,20 +21,32 @@ typedef std::vector<HttpSession*> Sessions;
 
 struct HttpConfigure
 {
-    static const int DefaultSessionNumber    = 5;
-    static const int DefaultMinSessionBlocks = 100;
-    static const int DefaultBytesPerBlock    = 512;
+    static const int DefaultSessionNumber;
+    static const int DefaultMinSessionBlocks;
+    static const int DefaultBytesPerBlock;
+    static const char *DefaultReferer;
+    static const char *DefaultUserAgent;
 
     int sessionNumber;
     int minSessionBlocks;
     int bytesPerBlock;
+    std::string referer;
+    std::string userAgent;
 
     HttpConfigure()
         : sessionNumber(0),
           minSessionBlocks(0),
-          bytesPerBlock(0)
+          bytesPerBlock(0),
+          referer(""),
+          userAgent("")
         {}
 };
+
+const int HttpConfigure::DefaultSessionNumber    = 5;
+const int HttpConfigure::DefaultMinSessionBlocks = 100;
+const int HttpConfigure::DefaultBytesPerBlock    = 512;
+const char *HttpConfigure::DefaultReferer        = "";
+const char *HttpConfigure::DefaultUserAgent      = "";
 
 enum HttpTaskState
 {

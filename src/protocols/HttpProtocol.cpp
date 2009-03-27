@@ -42,6 +42,7 @@
 
 #include <utility/File.h>
 #include <utility/DownloadException.h>
+#include <utility/SingleCurlHelper.h>
 
 #include <curl/curl.h>
 
@@ -296,12 +297,10 @@ void HttpProtocolData::saveTask(const Tasks::iterator &taskIt, std::string &data
 
     std::stringstream out;
     out << boost::format(
-        "<SessionNumber>%d</SessionNumber>"
         "<MinSessionBlocks>%d</MinSessionBlocks>"
         "<BytesPerBlock>%d</BytesPerBlock>"
         "<TotalSize>%d</TotalSize>"
         "<BitMap>")
-        % task->conf.sessionNumber
         % task->conf.minSessionBlocks
         % task->conf.bytesPerBlock
         % task->info->totalSize;
@@ -337,6 +336,10 @@ void HttpProtocolData::loadTask(HttpTask *task, std::string &data)
         task->conf.minSessionBlocks = parser.conf.minSessionBlocks;
     if (parser.conf.bytesPerBlock > 0)
         task->conf.bytesPerBlock = parser.conf.bytesPerBlock;
+    if (parser.conf.referer.length() > 0)
+        task->conf.referer = parser.conf.referer;
+    if (parser.conf.userAgent.length() > 0)
+        task->conf.userAgent = parser.conf.userAgent;
     if (parser.totalSize > 0)
         info->totalSize = parser.totalSize;
     if (parser.downloadMap.size() > 0)
@@ -602,11 +605,10 @@ HttpProtocol::HttpProtocol()
     d->defaultConf.sessionNumber    = HttpConfigure::DefaultSessionNumber;
     d->defaultConf.minSessionBlocks = HttpConfigure::DefaultMinSessionBlocks;
     d->defaultConf.bytesPerBlock    = HttpConfigure::DefaultBytesPerBlock;
+    d->defaultConf.referer          = HttpConfigure::DefaultReferer;
+    d->defaultConf.userAgent        = HttpConfigure::DefaultUserAgent;
 
-
-    CURLcode rete = curl_global_init(CURL_GLOBAL_ALL);
-    if (rete != CURLE_OK)
-        throw DOWNLOADEXCEPTION(rete, "CURLE", curl_easy_strerror(rete));
+    SingleCurlHelper::init();
 
     d->handle = curl_multi_init();
     if (d->handle == 0)
@@ -684,7 +686,17 @@ const char* HttpProtocol::getOptionsDetail()
             "<title>Bytes per block</title>"
             "<desc>How many bytes in a block</desc>"
             "<format>int:1-</format>"
-        "</BytesPerBlock>";
+        "</BytesPerBlock>"
+        "<Referer>"
+            "<title>Referer uri</title>"
+            "<desc>The referer in http request sent to remote server</desc>"
+            "<format>string</format>"
+        "</Referer>"
+        "<UserAgent>"
+            "<title>User agent</title>"
+            "<desc>The user agent in http request sent to remote server</desc>"
+            "<format>string</format>"
+        "</UserAgent>";
 }
 
 const char* HttpProtocol::getOptions()
@@ -719,13 +731,31 @@ void HttpProtocol::setOptions(const char *options)
 
 const char* HttpProtocol::getTaskOptions(const char *uri)
 {
-    static char buffer[64];
+    static char *ret = NULL;
+    static size_t s = 0;
 
-    snprintf(buffer, 63,
-             "<SessionNumber>%d</SessionNumber>",
-             d->defaultConf.sessionNumber);
+    std::string buffer = str(
+        boost::format("<SessionNumber>%d</SessionNumber>"
+                      "<Referer>%s</Referer>"
+                      "<UserAgent>%s</UserAgent>")
+        % d->defaultConf.sessionNumber
+        % d->defaultConf.referer
+        % d->defaultConf.userAgent);
 
-    return buffer;
+    if (ret == NULL)
+    {
+        s = buffer.length() + 1;
+        ret = new char[s];
+    }
+    else if ( (buffer.length() + 1) > s )
+    {
+        delete [] ret;
+        s = buffer.length() + 1;
+        ret = new char[s];
+    }
+    strcpy(ret, buffer.c_str());
+
+    return ret;
 }
 
 void HttpProtocol::addTask(TaskInfo *info)
@@ -797,9 +827,21 @@ void HttpProtocol::addTask(TaskInfo *info)
         taskLog(task->info, "Add new task, initialize");
     }
 
-    if ( (task->info->totalSize == 0) && (info->options.length() != 0) )
+    if (info->options.length() > 0)
     {
         d->loadTask(task.get(), info->options);
+    }
+
+    if (task->conf.referer.length() > 0)
+    {
+        rete = curl_easy_setopt(ses->handle, CURLOPT_REFERER, task->conf.referer.c_str());
+        CHECK_CURLE(rete);
+    }
+
+    if (task->conf.userAgent.length() > 0)
+    {
+        rete = curl_easy_setopt(ses->handle, CURLOPT_USERAGENT, task->conf.userAgent.c_str());
+        CHECK_CURLE(rete);
     }
 
     CURLMcode retm = curl_multi_add_handle(d->handle, ses->handle);

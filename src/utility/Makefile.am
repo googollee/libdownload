@@ -5,6 +5,7 @@ INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src/
 libutility_la_SOURCES = \
     Utility.h \
     DownloadException.h \
+    SingleCurlHelper.h \
     BitMap.cpp \
     BitMap.h \
     File.h \

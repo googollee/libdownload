@@ -4,7 +4,8 @@
 #include "Global.h"
 #include "ProtocolFactory.h"
 #include "protocols/ProtocolBase.h"
-#include "utility/Utility.h"
+
+#include <utility/Utility.h>
 
 #include <boost/signals.hpp>
 
