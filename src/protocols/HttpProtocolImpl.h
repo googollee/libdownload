@@ -21,12 +21,6 @@ typedef std::vector<HttpSession*> Sessions;
 
 struct HttpConfigure
 {
-    static const int DefaultSessionNumber;
-    static const int DefaultMinSessionBlocks;
-    static const int DefaultBytesPerBlock;
-    static const char *DefaultReferer;
-    static const char *DefaultUserAgent;
-
     int sessionNumber;
     int minSessionBlocks;
     int bytesPerBlock;
@@ -34,19 +28,44 @@ struct HttpConfigure
     std::string userAgent;
 
     HttpConfigure()
-        : sessionNumber(0),
-          minSessionBlocks(0),
-          bytesPerBlock(0),
+        : sessionNumber(5),
+          minSessionBlocks(100),
+          bytesPerBlock(512),
           referer(""),
           userAgent("")
         {}
 };
 
-const int HttpConfigure::DefaultSessionNumber    = 5;
-const int HttpConfigure::DefaultMinSessionBlocks = 100;
-const int HttpConfigure::DefaultBytesPerBlock    = 512;
-const char *HttpConfigure::DefaultReferer        = "";
-const char *HttpConfigure::DefaultUserAgent      = "";
+struct HttpProtocolData
+{
+    HttpProtocol *p; // a reference
+
+    CURLM *handle;
+    HttpConfigure defaultConf;
+    Tasks tasks;
+    int running;
+    Sessions finishSessions;
+
+    void initTask(HttpTask *task);
+    void removeTask(const Tasks::iterator &it);
+
+    void saveTask(const Tasks::iterator &it, std::string &data);
+    void loadTask(HttpTask *task, std::string &data);
+
+    void checkTask(HttpTask *task);
+    void checkSession(HttpSession *session);
+    void checkTasks();
+
+    void makeSession(HttpTask *task, size_t pos, size_t len);
+    bool splitMaxSession(HttpTask *task);
+    void removeSession(HttpSession *session);
+
+    HttpProtocolData()
+        : p(NULL),
+          handle(NULL),
+          running(0)
+        {}
+};
 
 enum HttpTaskState
 {
@@ -86,38 +105,8 @@ struct HttpTask
     HttpTask(HttpProtocolData *data)
         : d(data),
           info(NULL),
+          conf(data->defaultConf),
           state(HT_INVALID)
-        {}
-};
-
-struct HttpProtocolData
-{
-    HttpProtocol *p; // a reference
-
-    CURLM *handle;
-    HttpConfigure defaultConf;
-    Tasks tasks;
-    int running;
-    Sessions finishSessions;
-
-    void initTask(HttpTask *task);
-    void removeTask(const Tasks::iterator &it);
-
-    void saveTask(const Tasks::iterator &it, std::string &data);
-    void loadTask(HttpTask *task, std::string &data);
-
-    void checkTask(HttpTask *task);
-    void checkSession(HttpSession *session);
-    void checkTasks();
-
-    void makeSession(HttpTask *task, size_t pos, size_t len);
-    bool splitMaxSession(HttpTask *task);
-    void removeSession(HttpSession *session);
-
-    HttpProtocolData()
-        : p(NULL),
-          handle(NULL),
-          running(0)
         {}
 };
 

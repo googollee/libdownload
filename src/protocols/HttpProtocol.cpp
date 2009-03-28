@@ -167,7 +167,7 @@ void HttpProtocolData::initTask(HttpTask *task)
     if (!task->file.isOpen())
         throw DOWNLOADEXCEPTION(FAIL_OPEN_FILE, "HTTP", strerror(FAIL_OPEN_FILE));
     snprintf(logBuffer, 63, "File path: %s", output.c_str());
-    p->taskLog(info, logBuffer);
+    info->taskLog(info, logBuffer);
 
     if (info->totalSize == 0)
     {
@@ -181,7 +181,7 @@ void HttpProtocolData::initTask(HttpTask *task)
             info->validMap = BitMap(size_t(length), task->conf.bytesPerBlock);
             info->validMap.setAll(true);
             snprintf(logBuffer, 63, "File length: %lu", info->totalSize);
-            p->taskLog(info, logBuffer);
+            info->taskLog(info, logBuffer);
 
             task->file.resize(info->totalSize);
         }
@@ -258,7 +258,7 @@ void HttpProtocolData::removeTask(const Tasks::iterator &taskIt)
 
         char logBuffer[64] = {0};
         snprintf(logBuffer, 63, "remove session at %lu", ses->pos);
-        p->taskLog(task->info, logBuffer);
+        task->info->taskLog(task->info, logBuffer);
 
         if (ses->handle != NULL)
         {
@@ -417,7 +417,7 @@ bool HttpProtocolData::splitMaxSession(HttpTask *task)
     char logBuffer[64];
     snprintf(logBuffer, 63, "split session at %lu, length %d",
              maxLengthSes->pos, maxLengthSes->length);
-    p->taskLog(task->info, logBuffer);
+    task->info->taskLog(task->info, logBuffer);
 
     makeSession(task, begin, length);
 
@@ -451,7 +451,7 @@ void HttpProtocolData::checkSession(HttpSession *ses)
         TaskInfo *info = task->info;
         LOG(0, "task %p finish\n", info);
 
-        p->downloadFinish(info);
+        task->info->downloadFinish(info);
 
         if (p->hasTask(info))
             p->removeTask(info);
@@ -512,7 +512,7 @@ void HttpProtocolData::makeSession(HttpTask *task, size_t begin, size_t len)
     LOG(0, "make task %p session from %lu, len %lu\n", task->info, begin, len);
     char logBuffer[64] = {0};
     snprintf(logBuffer, 63, "make new session from %lu, len %lu", begin, len);
-    p->taskLog(task->info, logBuffer);
+    task->info->taskLog(task->info, logBuffer);
 
     std::auto_ptr<HttpSession> ses( new HttpSession(task) );
     ses->pos = begin;
@@ -572,7 +572,7 @@ void HttpProtocolData::removeSession(HttpSession *ses)
 #endif
     char logBuffer[64] = {0};
     snprintf(logBuffer, 63, "remove session at %lu", ses->pos);
-    p->taskLog(task->info, logBuffer);
+    task->info->taskLog(task->info, logBuffer);
 
     task->sessions.erase(it);
 
@@ -601,14 +601,9 @@ HttpProtocol::HttpProtocol()
 {
     LOG(0, "enter HttpProtocol ctor\n");
 
-    d->p = this;
-    d->defaultConf.sessionNumber    = HttpConfigure::DefaultSessionNumber;
-    d->defaultConf.minSessionBlocks = HttpConfigure::DefaultMinSessionBlocks;
-    d->defaultConf.bytesPerBlock    = HttpConfigure::DefaultBytesPerBlock;
-    d->defaultConf.referer          = HttpConfigure::DefaultReferer;
-    d->defaultConf.userAgent        = HttpConfigure::DefaultUserAgent;
-
     SingleCurlHelper::init();
+
+    d->p = this;
 
     d->handle = curl_multi_init();
     if (d->handle == 0)
@@ -774,7 +769,6 @@ void HttpProtocol::addTask(TaskInfo *info)
 
     std::auto_ptr<HttpTask> task( new HttpTask(d.get()) );
     task->state = HT_PREPARE;
-    task->conf = d->defaultConf;
     task->info = info;
     info->protocol = this;
     info->downloadSize = 0;
@@ -803,7 +797,7 @@ void HttpProtocol::addTask(TaskInfo *info)
 
     if (info->processData.length() != 0)
     {
-        taskLog(task->info, "Resume task, initialize");
+        info->taskLog(task->info, "Resume task, initialize");
 
         d->loadTask(task.get(), info->processData);
 
@@ -824,7 +818,7 @@ void HttpProtocol::addTask(TaskInfo *info)
     }
     else
     {
-        taskLog(task->info, "Add new task, initialize");
+        info->taskLog(task->info, "Add new task, initialize");
     }
 
     if (info->options.length() > 0)
@@ -866,11 +860,11 @@ void HttpProtocol::flushTask(TaskInfo *info)
     if (it == d->tasks.end())
     {
         LOG(0, "task %p doesn't exist\n", info);
-        taskError(NULL, TASK_NOT_EXIST);
+        info->taskError(this, info, TASK_NOT_EXIST);
         return;
     }
 
-    taskLog(info, "save task");
+    info->taskLog(info, "save task");
 
     d->saveTask(it, info->processData);
 }
@@ -883,11 +877,11 @@ void HttpProtocol::removeTask(TaskInfo *info)
     if (it == d->tasks.end())
     {
         LOG(0, "task %p doesn't exist\n", info);
-        taskError(NULL, TASK_NOT_EXIST);
+        info->taskError(this, info, TASK_NOT_EXIST);
         return;
     }
 
-    taskLog(info, "remove task");
+    info->taskLog(info, "remove task");
 
     d->removeTask(it);
 }

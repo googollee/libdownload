@@ -6,9 +6,10 @@
 #include <iostream>
 #include <sstream>
 
-void ErrorCallback(TaskInfo *info, int error)
+void ErrorCallback(ProtocolBase *p, TaskInfo *info, int error)
 {
-    printf("task %p error: %d\n", info, error);
+    printf("in error callback: %p\n", p);
+    printf("task %p error: %s\n", info, p->strerror(error));
 }
 
 void DownloadFinishCallback(TaskInfo *info)
@@ -56,9 +57,6 @@ TEST(HttpTest, AddTask)
     {
         HttpProtocol http;
 
-        http.taskError.connect(ErrorCallback);
-        http.downloadFinish.connect(DownloadFinishCallback);
-        http.taskLog.connect(LogTaskInfoCallback);
         http.protocolLog.connect(LogProtocolInfoCallback);
 
         TaskInfo *info = new TaskInfo;
@@ -66,6 +64,9 @@ TEST(HttpTest, AddTask)
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
         info->outputName = "";
+        info->taskError.connect(ErrorCallback);
+        info->downloadFinish.connect(DownloadFinishCallback);
+        info->taskLog.connect(LogTaskInfoCallback);
 
         http.addTask(info);
 
@@ -88,9 +89,6 @@ TEST(HttpTest, AddTaskWithOptions)
     {
         HttpProtocol http;
 
-        http.taskError.connect(ErrorCallback);
-        http.downloadFinish.connect(DownloadFinishCallback);
-        http.taskLog.connect(LogTaskInfoCallback);
         http.protocolLog.connect(LogProtocolInfoCallback);
 
         TaskInfo *info = new TaskInfo;
@@ -101,6 +99,9 @@ TEST(HttpTest, AddTaskWithOptions)
         info->options = "<SessionNumber>100</SessionNumber>\n"
             "<BytesPerBlock>1024</BytesPerBlock>"
             "<MinSessionBlocks>200</MinSessionBlocks>\n";
+        info->taskError.connect(ErrorCallback);
+        info->downloadFinish.connect(DownloadFinishCallback);
+        info->taskLog.connect(LogTaskInfoCallback);
 
         http.addTask(info);
 
@@ -126,9 +127,6 @@ TEST(HttpTest, NormalDownload)
     {
         HttpProtocol http;
 
-        http.taskError.connect(ErrorCallback);
-        http.downloadFinish.connect(DownloadFinishCallback);
-        http.taskLog.connect(LogTaskInfoCallback);
         http.protocolLog.connect(LogProtocolInfoCallback);
 
         TaskInfo *info = new TaskInfo;
@@ -136,6 +134,9 @@ TEST(HttpTest, NormalDownload)
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
         info->outputName = "";
+        info->taskError.connect(ErrorCallback);
+        info->downloadFinish.connect(DownloadFinishCallback);
+        info->taskLog.connect(LogTaskInfoCallback);
 
         http.addTask(info);
 
@@ -174,9 +175,6 @@ TEST(HttpTest, SaveLoadDownload)
     std::string data;
     HttpProtocol http;
 
-    http.taskError.connect(ErrorCallback);
-    http.downloadFinish.connect(DownloadFinishCallback);
-    http.taskLog.connect(LogTaskInfoCallback);
     http.protocolLog.connect(LogProtocolInfoCallback);
 
     try
@@ -186,6 +184,9 @@ TEST(HttpTest, SaveLoadDownload)
         info->uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
         info->outputPath = "./";
         info->outputName = "";
+        info->taskError.connect(ErrorCallback);
+        info->downloadFinish.connect(DownloadFinishCallback);
+        info->taskLog.connect(LogTaskInfoCallback);
 
         http.addTask(info);
 
@@ -229,6 +230,9 @@ TEST(HttpTest, SaveLoadDownload)
         info->outputPath = "./";
         info->outputName = "";
         info->processData = data;
+        info->taskError.connect(ErrorCallback);
+        info->downloadFinish.connect(DownloadFinishCallback);
+        info->taskLog.connect(LogTaskInfoCallback);
 
         http.addTask(info);
 
@@ -268,9 +272,6 @@ TEST(HttpTest, DownloadZeroFile)
     {
         HttpProtocol http;
 
-        http.taskError.connect(ErrorCallback);
-        http.downloadFinish.connect(DownloadFinishCallback);
-        http.taskLog.connect(LogTaskInfoCallback);
         http.protocolLog.connect(LogProtocolInfoCallback);
 
         TaskInfo *info = new TaskInfo;
@@ -278,6 +279,9 @@ TEST(HttpTest, DownloadZeroFile)
         info->uri = "http://www.googollee.net/zero.file";
         info->outputPath = "./";
         info->outputName = "";
+        info->taskError.connect(ErrorCallback);
+        info->downloadFinish.connect(DownloadFinishCallback);
+        info->taskLog.connect(LogTaskInfoCallback);
 
         http.addTask(info);
 
