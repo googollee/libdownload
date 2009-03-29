@@ -104,7 +104,6 @@ void BitMap::setRange(BitMap::size_type begin, BitMap::size_type end, BitMap::va
 
     if (end > map_.size())
     {
-        printf("set the last one\n");
         map_.at(map_.size() - 1) = v;
     }
 }

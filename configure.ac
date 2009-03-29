@@ -38,10 +38,12 @@ AC_MSG_RESULT(GLIB_CFLAGS... $GLIB_CFLAGS)
 AC_MSG_RESULT(GLIB_LIBS... $GLIB_LIBS)
 
 # check for curl
-LIBCURL_CHECK_CONFIG([yes], [7.19.0])
+LIBCURL_CHECK_CONFIG([yes], [7.19.0], ,AC_MSG_ERROR([We could not detect the libcurl libraries (version 7.19.0 or higher). If you have a staged libcurl library (still not installed) please specify the PATH with --with-libcurl option.]))
 AC_SUBST(LIBCURL_CPPFLAGS)
 LIBCURL_LIBS=$LIBCURL
 AC_SUBST(LIBCURL_LIBS)
+AC_MSG_RESULT(LIBCURL_CFLAGS... $LIBCURL_CPPFLAGS)
+AC_MSG_RESULT(LIBCURL_LIBS... $LIBCURL_LIBS)
 
 # check for boost
 AX_BOOST_BASE([1.36.0])
