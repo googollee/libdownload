@@ -185,19 +185,10 @@ void HttpProtocolData::initTask(HttpTask *task)
 
             task->file.resize(info->totalSize);
         }
-        else if (length == -1)
-        {
+        else if (length < 0)
             info->totalSize = 0;
-        }
-        else // length == 0 or other unknow error.
-        {
-            if (length != 0)
-            {
-                LOG(0, "get content length %g, which is error.\n", length);
-            }
-            finishSessions.push_back(ses);
+        else // length == 0, zero length file
             return;
-        }
     }
 
     info->totalSource = info->validSource = 1;
@@ -453,10 +444,7 @@ void HttpProtocolData::checkSession(HttpSession *ses)
 
         task->info->downloadFinish(info);
 
-        if (p->hasTask(info))
-            p->removeTask(info);
-
-        return;
+        p->removeTask(info);
     }
     else
     {
@@ -490,7 +478,9 @@ void HttpProtocolData::checkTasks()
             {
             case 2: // succeed download
                 if (ses->t->state == HT_PREPARE)
+                {
                     initTask(ses->t);
+                }
 
                 ses->length = 0; // make sure session will be removed.
                 checkSession(ses);
