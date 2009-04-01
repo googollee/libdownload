@@ -491,11 +491,9 @@ void HttpProtocolData::checkTasks()
             case 2: // succeed download
                 if (ses->t->state == HT_PREPARE)
                     initTask(ses->t);
-                else
-                {
-                    ses->length = 0; // make sure session will be removed.
-                    checkSession(ses);
-                }
+
+                ses->length = 0; // make sure session will be removed.
+                checkSession(ses);
                 break;
             default:
                 break;
