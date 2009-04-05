@@ -8,15 +8,15 @@ typedef std::vector<TaskInfo*> Tasks;
 
 struct DownloadManagerData
 {
-    std::auto_ptr<ProtocolFactory> factory;
+    ProtocolFactory *factory;
     Tasks tasks;
 
-    DownloadManagerData(std::auto_ptr<ProtocolFactory> f)
+    DownloadManagerData(ProtocolFactory *f)
         : factory(f)
         {}
 };
 
-DownloadManager::DownloadManager(std::auto_ptr<ProtocolFactory> factory)
+DownloadManager::DownloadManager(ProtocolFactory *factory)
     : d(new DownloadManagerData(factory))
 {}
 

@@ -71,7 +71,7 @@ public:
     typedef void TaskStateChangeCallback(Task task, TaskState oldState, TaskState newState);
     boost::signal<TaskStateChangeCallback> taskStateChange;
 
-    explicit DownloadManager(std::auto_ptr<ProtocolFactory> factory);
+    explicit DownloadManager(ProtocolFactory *factory);
     ~DownloadManager();
 
     const char* strerror(int err);

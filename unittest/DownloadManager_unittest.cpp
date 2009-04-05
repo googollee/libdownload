@@ -6,10 +6,10 @@
 
 TEST(DownloadManager, NormalTest)
 {
-    std::auto_ptr<ProtocolFactory> factory(new ProtocolFactory());
-    factory->addProtocol(std::auto_ptr<ProtocolBase>(new HttpProtocol));
+    ProtocolFactory factory;
+    factory.addProtocol(std::auto_ptr<ProtocolBase>(new HttpProtocol));
 
-    DownloadManager manager(factory);
+    DownloadManager manager(&factory);
     const char *uri = "http://curl.haxx.se/libcurl/c/curl_easy_setopt.html";
     std::string taskOptions = manager.getTaskOptions(uri);
     std::cout << "task options:\n" << taskOptions << std::endl;
