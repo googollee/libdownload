@@ -117,6 +117,7 @@ size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession *ses)
     const size_t writed = task->file.write(buffer, shouldWrite);
 
     task->info->downloadSize += writed;
+    task->d->performSize += writed;
 
     if (ses->length > 0)
     {
@@ -141,6 +142,28 @@ std::string getFileName(CURL *handle, const std::string &uri)
     return uri.substr(p);
 }
 
+std::string getMimeType(CURL *handle, const std::string &uri)
+{
+    char *contentType = NULL;
+    std::string ret;
+    curl_easy_getinfo(handle, CURLINFO_CONTENT_TYPE, &contentType);
+
+    if (contentType != NULL)
+    {
+        char *end = strchr(contentType, ';');
+        if (end != NULL)
+        {
+            ret = std::string(contentType, end - contentType);
+        }
+        else
+        {
+            ret = contentType;
+        }
+    }
+
+    return ret;
+}
+
 void HttpProtocolData::initTask(HttpTask *task)
 {
     LOG(0, "enter initTask, task = %p\n", task);
@@ -149,8 +172,13 @@ void HttpProtocolData::initTask(HttpTask *task)
     TaskInfo *info = task->info;
     CURL *ehandle = ses->handle;
 
-    // get file information.
     char logBuffer[64] = {0};
+
+    info->mimeType = getMimeType(ehandle, info->uri);
+    snprintf(logBuffer, 63, "mime type: %s", info->mimeType.c_str());
+    info->taskLog(info, logBuffer);
+
+    // get file information.
     double length;
     if (info->outputName.length() == 0)
         info->outputName = getFileName(ehandle, info->uri);
@@ -910,14 +938,18 @@ void HttpProtocol::getFdSet(fd_set *read_fd_set,
     }
 }
 
-int HttpProtocol::perform()
+int HttpProtocol::performDownload(size_t *size)
 {
     int running;
     CURLMcode retm = CURLM_OK;
+    d->performSize = 0;
 
     while ( (retm = curl_multi_perform(d->handle, &running)) ==
             CURLM_CALL_MULTI_PERFORM )
     {}
+
+    if (size != NULL)
+        *size = d->performSize;
 
     if (retm != CURLM_OK)
         throw DOWNLOADEXCEPTION(retm, "CURL", curl_multi_strerror(retm));
@@ -941,3 +973,10 @@ int HttpProtocol::perform()
     return d->tasks.size();
 }
 
+int HttpProtocol::performUpload(size_t *size)
+{
+    // Http protocol doens't support upload now.
+    if (size != NULL)
+        *size = 0;
+    return 0;
+}

@@ -32,7 +32,8 @@ public:
                           fd_set *write_fd_set,
                           fd_set *exc_fd_set,
                           int    *max_fd);
-    virtual int perform();
+    virtual int performDownload(size_t *size);
+    virtual int performUpload(size_t *size);
 
     virtual const char* strerror(int error);
 

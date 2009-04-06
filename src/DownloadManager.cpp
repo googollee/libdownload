@@ -178,16 +178,22 @@ void DownloadManager::save(std::ostream &out)
     LOG(0, "enter DownloadManager::save\n");
 }
 
-int DownloadManager::perform()
+int DownloadManager::perform(size_t *download, size_t *upload)
 {
 //    LOG(0, "enter DownloadManager::perform()\n");
 
     int ret = 0;
+    size_t size = 0;
     for (ProtocolFactory::Protocols::iterator it = d->factory->protocols_.begin();
          it != d->factory->protocols_.end();
          ++it)
     {
-        ret += (*it)->perform();
+        size = 0;
+        ret += (*it)->performDownload(&size);
+        download += size;
+        size = 0;
+        ret += (*it)->performUpload(&size);
+        upload += size;
     }
 
     return ret;

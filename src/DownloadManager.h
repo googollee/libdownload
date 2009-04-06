@@ -92,7 +92,7 @@ public:
     void load(std::istream &in);
     void save(std::ostream &out);
 
-    int perform();
+    int perform(size_t *download, size_t *upload);
 
 private:
     std::auto_ptr<DownloadManagerData> d;

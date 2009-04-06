@@ -64,6 +64,8 @@ struct TaskInfo
     //...
     std::string options;
     std::string comment;
+    std::string mimeType;
+
     std::string processData;
 
     // no need save below

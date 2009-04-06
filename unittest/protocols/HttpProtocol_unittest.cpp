@@ -140,13 +140,15 @@ TEST(HttpTest, NormalDownload)
 
         http.addTask(info);
 
-        while (http.perform() > 0)
+        size_t size = 0;
+        while (http.performDownload(&size) > 0)
         {
             if (info->totalSize > 0)
-                printf("progress: %lu%%, %d/%d\r",
+                printf("progress: %lu%%, %d/%d, download: %lu bytes\r",
                        info->downloadSize * 100 / info->totalSize,
                        info->validSource,
-                       info->totalSource
+                       info->totalSource,
+                       size
                     );
         }
 
@@ -191,13 +193,15 @@ TEST(HttpTest, SaveLoadDownload)
         http.addTask(info);
 
         int i = 0;
-        while (http.perform() > 0)
+        size_t size = 0;
+        while (http.performDownload(&size) > 0)
         {
             if (info->totalSize > 0)
-                printf("progress: %lu%%, %d/%d\r",
+                printf("progress: %lu%%, %d/%d, download: %lu bytes\r",
                        info->downloadSize * 100 / info->totalSize,
                        info->validSource,
-                       info->totalSource
+                       info->totalSource,
+                       size
                     );
             if (i>3) break;
             if ( (info->totalSize > 0) &&
@@ -236,13 +240,15 @@ TEST(HttpTest, SaveLoadDownload)
 
         http.addTask(info);
 
-        while (http.perform() > 0)
+        size_t size = 0;
+        while (http.performDownload(&size) > 0)
         {
             if (info->totalSize > 0)
-                printf("progress: %lu%%, %d/%d\r",
+                printf("progress: %lu%%, %d/%d, download: %lu bytes\r",
                        info->downloadSize * 100 / info->totalSize,
                        info->validSource,
-                       info->totalSource
+                       info->totalSource,
+                       size
                     );
         }
 
@@ -285,13 +291,15 @@ TEST(HttpTest, DownloadZeroFile)
 
         http.addTask(info);
 
-        while (http.perform() > 0)
+        size_t size = 0;
+        while (http.performDownload(&size) > 0)
         {
             if (info->totalSize > 0)
-                printf("progress: %lu%%, %d/%d\r",
+                printf("progress: %lu%%, %d/%d, download: %lu bytes\r",
                        info->downloadSize * 100 / info->totalSize,
                        info->validSource,
-                       info->totalSource
+                       info->totalSource,
+                       size
                     );
         }
 

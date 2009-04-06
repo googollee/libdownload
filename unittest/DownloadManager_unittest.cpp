@@ -20,13 +20,16 @@ TEST(DownloadManager, NormalTest)
                                 NULL);
     manager.startTask(task);
 
-    while (manager.perform() > 0)
+    size_t upload = 0, download = 0;
+    while (manager.perform(&download, &upload) > 0)
     {
         if (task.totalSize() > 0)
-            printf("progress: %lu%%, %d/%d\r",
+            printf("progress: %lu%%, %d/%d\r, download: %lu bytes, upload: %lu bytes",
                    task.downloadSize() * 100 / task.totalSize(),
                    task.validSource(),
-                   task.totalSource()
+                   task.totalSource(),
+                   download,
+                   upload
                 );
     }
 
