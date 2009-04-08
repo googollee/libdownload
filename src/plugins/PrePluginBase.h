@@ -1,10 +1,10 @@
-#ifndef PLUGIN_BASE_HEAD
-#define PLUGIN_BASE_HEAD
+#ifndef PRE_PLUGIN_BASE_HEAD
+#define PRE_PLUGIN_BASE_HEAD
 
 #include <utility/Utility.h>
 #include <DownloadManager.h>
 
-class PluginBase : public Noncopiable
+class PrePluginBase : public Noncopiable
 {
 public:
     /**
@@ -15,10 +15,10 @@ public:
      * \param p   The pointer to protocol instance
      * \param log Log text.
      */
-    boost::signal<void (PluginBase *p, const char *log)> log;
+    boost::signal<void (PrePluginBase *p, const char *log)> log;
 
-    PluginBase(DownloadManager &manager);
-    virtual ~PluginBase();
+    PrePluginBase(DownloadManager &manager);
+    virtual ~PrePluginBase();
 
     /**
      * \brief The name of protocol.
@@ -109,39 +109,11 @@ public:
      *
      * \param info The task info.
      */
-    virtual void addTask(TaskInfo *info) = 0;
-
-    /**
-     * \brief Stop and remove a task.
-     *
-     * \param info The task info.
-     */
-    virtual void removeTask(TaskInfo *info) = 0;
-
-    /**
-     * \brief Check if a task is processing.
-     *
-     * \param info The task info.
-     * \return The check result.
-     */
-    virtual bool hasTask(TaskInfo *info) = 0;
-
-    /**
-     * \brief Flush the process data into info->processData
-     *
-     * \param info The task info.
-     */
-    virtual void flushTask(TaskInfo *info) = 0;
-
-    /**
-     * \brief Get the task state.
-     *
-     * Get the task detail state, maybe the session position, or percentage of each session.
-     *
-     * \param info The task info.
-     * \return The state detail of task.
-     */
-    virtual const char* getTaskState(TaskInfo *info) = 0;
+    virtual void addTask(const char *uri,
+                         const char *outputPath,
+                         const char *outputName,
+                         const char *options,
+                         const char *comment) = 0;
 
     /**
      * \brief Return the string of error.
@@ -150,16 +122,12 @@ public:
      * \return The text of error.
      */
     virtual const char *strerror(int error) = 0;
-
-private:
-    PluginBase(const PluginBase &);
-    bool operator=(const PluginBase &);
 };
 
-inline PluginBase::PluginBase()
+inline PrePluginBase::PrePluginBase()
 {}
 
-inline PluginBase::~PluginBase()
+inline PrePluginBase::~PrePluginBase()
 {}
 
 #endif
