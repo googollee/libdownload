@@ -1,6 +1,6 @@
 noinst_LTLIBRARIES = libutility.la
 
-INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src/
+INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/lib/
 
 libutility_la_SOURCES = \
     Utility.h \
