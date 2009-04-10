@@ -8,4 +8,5 @@ libprotocols_la_SOURCES = \
     HttpProtocolImpl.h \
     HttpProtocol.cpp
 
-libprotocols_la_CPPFLAGS = ${BOOST_CPPFLAGS}
+libprotocols_la_CPPFLAGS = ${BOOST_CPPFLAGS} ${LIBCURL_CFLAGS}
+libprotocols_la_LDFLAGS = ${LIBCURL_LIBS}

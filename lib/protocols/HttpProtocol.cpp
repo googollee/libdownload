@@ -517,6 +517,7 @@ void HttpProtocolData::checkTasks()
                 break;
             }
             break;
+            // TODO: handle other return code.
         default:
             break;
         }
@@ -566,6 +567,7 @@ void HttpProtocolData::makeSession(HttpTask *task, size_t begin, size_t len)
     ++task->info->totalSource;
     ++running;
 
+    // TODO: maybe need short sessions by pos.
     task->sessions.push_back(ses.get());
 
     ses.release();
@@ -686,27 +688,32 @@ const char* HttpProtocol::getOptionsDetail()
         "<SessionNumber>"
             "<title>Session number</title>"
             "<desc>How many sessions in one task</desc>"
-            "<format>int:1-</format>"
+            "<type>unsignedInt</type>"
+            "<pattern/>"
         "</SessionNumber>"
         "<MinSessionBlocks>"
             "<title>Min session blocks</title>"
             "<desc>The minimum blocks of one session</desc>"
-            "<format>int:1-</format>"
+            "<type>unsignedInt</type>"
+            "<pattern/>"
         "</MinSessionBlocks>"
         "<BytesPerBlock>"
             "<title>Bytes per block</title>"
             "<desc>How many bytes in a block</desc>"
-            "<format>int:1-</format>"
+            "<type>unsignedInt</type>"
+            "<pattern/>"
         "</BytesPerBlock>"
         "<Referer>"
             "<title>Referer uri</title>"
             "<desc>The referer in http request sent to remote server</desc>"
-            "<format>string</format>"
+            "<type>string</type>"
+            "<pattern/>"
         "</Referer>"
         "<UserAgent>"
             "<title>User agent</title>"
             "<desc>The user agent in http request sent to remote server</desc>"
-            "<format>string</format>"
+            "<type>string</type>"
+            "<pattern/>"
         "</UserAgent>";
 }
 
@@ -914,6 +921,7 @@ const char* HttpProtocol::getTaskState(TaskInfo *info)
 {
     LOG(0, "enter getTaskState, info = %p\n", info);
 
+    // TODO: return the state of all sessions.
     return "";
 }
 

@@ -79,14 +79,15 @@ public:
      * <OptionName>
      *   <title>OptionTitleForShort</title>
      *   <desc>Detail description of this option</desc>
-     *   <format>value format of this option</format>
+     *   <type>value format of this option</type>
+     *   <pattern>value pattern of this option, in regex</pattern>
      * </OptionName>
      * \endcode
+     * \notice Values of type and pattern follow XML Schema special.
      *
      * \return The XML text in utf8.
      * \see getTaskOptions()
      * \see getAllOptions()
-     * \todo Doesn't sure the format of option format now, should use some thing easy convert to html.
      */
     virtual const char* getOptionsDetail() = 0;
 

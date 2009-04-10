@@ -2,8 +2,6 @@ SUBDIRS = utility protocols
 
 lib_LTLIBRARIES = libdownload.la
 
-libdownload_la_LDFLAGS = -no-undefined -version-info 0:0:0
-
 libdownload_la_LIBADD = \
     $(top_srcdir)/lib/protocols/libprotocols.la \
     $(top_srcdir)/lib/utility/libutility.la \
@@ -13,6 +11,7 @@ libdownload_la_LIBADD = \
     $(GLIB_LIBS)
 
 libdownload_la_CPPFLAGS = ${BOOST_CPPFLAGS}
+libdownload_la_LDFLAGS = -no-undefined -version-info 0:0:0
 
 libdownload_la_SOURCES = \
     Global.h \
