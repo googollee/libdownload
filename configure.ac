@@ -21,11 +21,9 @@ AC_ARG_ENABLE(debug,
               [with_debug=yes], [with_debug=no])
 AC_MSG_RESULT(enable debug... $with_debug)
 if test "x$with_debug" == "xyes" ; then
-  CFLAGS=" -ggdb -O0 -D_DEBUG -Wall"
-  CXXFLAGS=" -ggdb -O0 -D_DEBUG -Wall"
+  CPPFLAGS=" -ggdb -O0 -D_DEBUG -Wall -Wextra"
 else
-  CFLAGS=" -O2 -Wno-deprecated"
-  CXXFLAGS=" -O2 -Wno-deprecated"
+  CPPFLAGS=" -O2 -Wno-deprecated -Wall -Wextra"
 fi
 
 # Checks for libraries.
