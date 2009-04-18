@@ -22,8 +22,10 @@ libdownload_la_SOURCES = \
 
 libdownloadincludedir=$(includedir)/libdownload
 libdownloadinclude_HEADERS = \
+	libdownload.h \
     Global.h \
     DownloadManager.h \
+	ProtocolFactory.h \
     utility/BitMap.h \
     utility/Utility.h \
     utility/SimpleXmlParser.h \
