@@ -17,15 +17,15 @@ SUBDIRS = gtest
 TESTS =
 check_PROGRAMS =
 
-TESTS += BitMap_unittest
-check_PROGRAMS += BitMap_unittest
-BitMap_unittest_SOURCES = \
-    utility/BitMap_unittest.cpp \
-    $(top_srcdir)/lib/utility/BitMap.h \
-    $(top_srcdir)/lib/utility/BitMap.cpp
-BitMap_unittest_CPPFLAGS =
-BitMap_unittest_LDADD = \
-    gtest/lib/libgtest_main.la
+#TESTS += BitMap_unittest
+#check_PROGRAMS += BitMap_unittest
+#BitMap_unittest_SOURCES = \
+#    utility/BitMap_unittest.cpp \
+#    $(top_srcdir)/lib/utility/BitMap.h \
+#    $(top_srcdir)/lib/utility/BitMap.cpp
+#BitMap_unittest_CPPFLAGS =
+#BitMap_unittest_LDADD = \
+#    gtest/lib/libgtest_main.la
 
 TESTS += File_unittest
 check_PROGRAMS += File_unittest
@@ -37,64 +37,64 @@ File_unittest_CPPFLAGS =
 File_unittest_LDADD = \
     gtest/lib/libgtest_main.la
 
-TESTS += SimpleXmlParser_unittest
-check_PROGRAMS += SimpleXmlParser_unittest
-SimpleXmlParser_unittest_SOURCES = \
-    utility/SimpleXmlParser_unittest.cpp \
-    $(top_srcdir)/lib/utility/SimpleXmlParser.h \
-    $(top_srcdir)/lib/utility/SimpleXmlParser.cpp
-SimpleXmlParser_unittest_CPPFLAGS = $(GLIB_CFLAGS)
-SimpleXmlParser_unittest_LDADD = \
-    gtest/lib/libgtest_main.la \
-    $(GLIB_LIBS)
+#TESTS += SimpleXmlParser_unittest
+#check_PROGRAMS += SimpleXmlParser_unittest
+#SimpleXmlParser_unittest_SOURCES = \
+#    utility/SimpleXmlParser_unittest.cpp \
+#    $(top_srcdir)/lib/utility/SimpleXmlParser.h \
+#    $(top_srcdir)/lib/utility/SimpleXmlParser.cpp
+#SimpleXmlParser_unittest_CPPFLAGS = $(GLIB_CFLAGS)
+#SimpleXmlParser_unittest_LDADD = \
+#    gtest/lib/libgtest_main.la \
+#    $(GLIB_LIBS)
 
-TESTS += protocols/HttpProtocol_unittest.sh
-check_PROGRAMS += HttpProtocol_unittest
-HttpProtocol_unittest_SOURCES = \
-    protocols/HttpProtocol_unittest.cpp \
-    $(top_srcdir)/lib/protocols/ProtocolBase.h \
-    $(top_srcdir)/lib/protocols/HttpProtocol.h \
-    $(top_srcdir)/lib/protocols/HttpProtocolImpl.h \
-    $(top_srcdir)/lib/protocols/HttpProtocol.cpp
-HttpProtocol_unittest_CPPFLAGS = ${LIBCURL_CPPFLAGS} ${BOOST_CPPFLAGS} $(GLIB_CFLAGS)
-HttpProtocol_unittest_LDADD = \
-    gtest/lib/libgtest_main.la \
-    $(top_srcdir)/lib/utility/libutility.la \
-    ${LIBCURL_LIBS} \
-    ${BOOST_LDFLAGS} \
-    ${BOOST_SIGNALS_LIB} \
-    $(GLIB_LIBS)
+#TESTS += protocols/HttpProtocol_unittest.sh
+#check_PROGRAMS += HttpProtocol_unittest
+#HttpProtocol_unittest_SOURCES = \
+#    protocols/HttpProtocol_unittest.cpp \
+#    $(top_srcdir)/lib/protocols/ProtocolBase.h \
+#    $(top_srcdir)/lib/protocols/HttpProtocol.h \
+#    $(top_srcdir)/lib/protocols/HttpProtocolImpl.h \
+#    $(top_srcdir)/lib/protocols/HttpProtocol.cpp
+#HttpProtocol_unittest_CPPFLAGS = ${LIBCURL_CPPFLAGS} ${BOOST_CPPFLAGS} $(GLIB_CFLAGS)
+#HttpProtocol_unittest_LDADD = \
+#    gtest/lib/libgtest_main.la \
+#    $(top_srcdir)/lib/utility/libutility.la \
+#    ${LIBCURL_LIBS} \
+#    ${BOOST_LDFLAGS} \
+#    ${BOOST_SIGNALS_LIB} \
+#    $(GLIB_LIBS)
 
-TESTS += ProtocolFactory_unittest
-check_PROGRAMS += ProtocolFactory_unittest
-ProtocolFactory_unittest_SOURCES = \
-    ProtocolFactory_unittest.cpp \
-    $(top_srcdir)/lib/ProtocolFactory.h \
-    $(top_srcdir)/lib/ProtocolFactory.cpp
-ProtocolFactory_unittest_CPPFLAGS = ${LIBCURL_CPPFLAGS} ${BOOST_CPPFLAGS} $(GLIB_CFLAGS)
-ProtocolFactory_unittest_LDADD = \
-    gtest/lib/libgtest_main.la \
-    $(top_srcdir)/lib/protocols/libprotocols.la \
-    $(top_srcdir)/lib/utility/libutility.la \
-    ${LIBCURL_LIBS} \
-    ${BOOST_LDFLAGS} \
-    ${BOOST_SIGNALS_LIB} \
-    $(GLIB_LIBS)
+#TESTS += ProtocolFactory_unittest
+#check_PROGRAMS += ProtocolFactory_unittest
+#ProtocolFactory_unittest_SOURCES = \
+#    ProtocolFactory_unittest.cpp \
+#    $(top_srcdir)/lib/ProtocolFactory.h \
+#    $(top_srcdir)/lib/ProtocolFactory.cpp
+#ProtocolFactory_unittest_CPPFLAGS = ${LIBCURL_CPPFLAGS} ${BOOST_CPPFLAGS} $(GLIB_CFLAGS)
+#ProtocolFactory_unittest_LDADD = \
+#    gtest/lib/libgtest_main.la \
+#    $(top_srcdir)/lib/protocols/libprotocols.la \
+#    $(top_srcdir)/lib/utility/libutility.la \
+#    ${LIBCURL_LIBS} \
+#    ${BOOST_LDFLAGS} \
+#    ${BOOST_SIGNALS_LIB} \
+#    $(GLIB_LIBS)
 
-TESTS += DownloadManager_unittest
-check_PROGRAMS += DownloadManager_unittest
-DownloadManager_unittest_SOURCES = \
-    DownloadManager_unittest.cpp \
-    $(top_srcdir)/lib/ProtocolFactory.h \
-    $(top_srcdir)/lib/ProtocolFactory.cpp \
-    $(top_srcdir)/DownloadManager.h \
-    $(top_srcdir)/lib/DownloadManager.cpp
-DownloadManager_unittest_CPPFLAGS = ${LIBCURL_CPPFLAGS} ${BOOST_CPPFLAGS} $(GLIB_CFLAGS)
-DownloadManager_unittest_LDADD = \
-    gtest/lib/libgtest_main.la \
-    $(top_srcdir)/lib/protocols/libprotocols.la \
-    $(top_srcdir)/lib/utility/libutility.la \
-    ${LIBCURL_LIBS} \
-    ${BOOST_LDFLAGS} \
-    ${BOOST_SIGNALS_LIB} \
-    $(GLIB_LIBS)
+#TESTS += DownloadManager_unittest
+#check_PROGRAMS += DownloadManager_unittest
+#DownloadManager_unittest_SOURCES = \
+#    DownloadManager_unittest.cpp \
+#    $(top_srcdir)/lib/ProtocolFactory.h \
+#    $(top_srcdir)/lib/ProtocolFactory.cpp \
+#    $(top_srcdir)/DownloadManager.h \
+#    $(top_srcdir)/lib/DownloadManager.cpp
+#DownloadManager_unittest_CPPFLAGS = ${LIBCURL_CPPFLAGS} ${BOOST_CPPFLAGS} $(GLIB_CFLAGS)
+#DownloadManager_unittest_LDADD = \
+#    gtest/lib/libgtest_main.la \
+#    $(top_srcdir)/lib/protocols/libprotocols.la \
+#    $(top_srcdir)/lib/utility/libutility.la \
+#    ${LIBCURL_LIBS} \
+#    ${BOOST_LDFLAGS} \
+#    ${BOOST_SIGNALS_LIB} \
+#    $(GLIB_LIBS)

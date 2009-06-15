@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.6])
-AC_INIT([libdownload unit test], [0.0.1], [googollee@gmail.com])
+AC_INIT([libdownload], [0.0.1], [googollee@gmail.com])
 AC_CONFIG_SRCDIR([./COPYING])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE
@@ -36,7 +36,7 @@ AC_MSG_RESULT(GLIB_CFLAGS... $GLIB_CFLAGS)
 AC_MSG_RESULT(GLIB_LIBS... $GLIB_LIBS)
 
 # check for curl
-LIBCURL_CHECK_CONFIG([yes], [7.19.0], ,AC_MSG_ERROR([We could not detect the libcurl libraries (version 7.19.0 or higher). If you have a staged libcurl library (still not installed) please specify the PATH with --with-libcurl option.]))
+LIBCURL_CHECK_CONFIG([yes], [7.18.0], ,AC_MSG_ERROR([We could not detect the libcurl libraries (version 7.19.0 or higher). If you have a staged libcurl library (still not installed) please specify the PATH with --with-libcurl option.]))
 AC_SUBST(LIBCURL_CPPFLAGS)
 LIBCURL_LIBS=$LIBCURL
 AC_SUBST(LIBCURL_LIBS)
@@ -44,7 +44,7 @@ AC_MSG_RESULT(LIBCURL_CFLAGS... $LIBCURL_CPPFLAGS)
 AC_MSG_RESULT(LIBCURL_LIBS... $LIBCURL_LIBS)
 
 # check for boost
-AX_BOOST_BASE([1.36.0])
+AX_BOOST_BASE([1.34.0])
 AX_BOOST_SIGNALS()
 
 # Checks for header files.
@@ -69,7 +69,6 @@ AC_CHECK_FUNCS([dup2 getcwd getpagesize gettimeofday memset mkdir munmap regcomp
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  lib/utility/Makefile
-                 lib/protocols/Makefile
                  unittest/Makefile
                  unittest/gtest/Makefile])
 AC_OUTPUT

@@ -1,180 +1,170 @@
 #ifndef DOWNLOAD_FILE_CLASS_HEAD
 #define DOWNLOAD_FILE_CLASS_HEAD
 
-#include <utility/Utility.h>
+#define OF_READ     0x1
+#define OF_WRITE    0x2
+#define OF_CREATE   0x4
+#define OF_TRUNCATE 0x8
+
+#define SF_BEGIN   0
+#define SF_CURRENT 1
+#define SF_END     2
+
+#include "FilePosixApi.h"
+#include "Utility.h"
 
 #include <stdio.h>
 
-enum OpenFlag
+namespace Utility
 {
-    OF_Read     = 0x1,
-    OF_Write    = 0x2,
-    OF_Create   = 0x4,
-    OF_Truncate = 0x8,
-};
 
-enum SeekFlag
-{
-    SF_FromBegin   = 0,
-    SF_FromCurrent = 1,
-    SF_FromEnd     = 2,
-};
-
-template <typename T>
-class FileBase : private Noncopiable
+class File : private Noncopiable
 {
 public:
-    static void remove(const char *name);
+    enum OpenFlag
+    {
+        OF_Read     = OF_READ,
+        OF_Write    = OF_WRITE,
+        OF_Create   = OF_CREATE,
+        OF_Truncate = OF_TRUNCATE,
+    };
 
-    FileBase();
-    FileBase(const char *name, int flag);
-    ~FileBase();
+    enum SeekFlag
+    {
+        SF_FromBegin   = SF_BEGIN,
+        SF_FromCurrent = SF_CURRENT,
+        SF_FromEnd     = SF_END,
+    };
+
+    static bool exist(const char *name);
+    static void remove(const char *name);
+    static void resize(const char *name, size_t len);
+
+    File();
+    ~File();
 
     void open(const char *name, int flag);
     bool isOpen();
     void close();
-    void resize(size_t len);
 
     size_t read(void *buffer, size_t max);
     size_t write(const void *buffer, size_t len);
 
     void seek(size_t pos, SeekFlag flag);
-    bool seekWithLengthCheck(size_t pos);
     size_t tell();
 
 private:
-    T data;
+    FileApi::HANDLE handle_;
 };
 
-template <typename T>
-inline FileBase<T>::FileBase()
-{}
-
-template <typename T>
-inline FileBase<T>::FileBase(const char *name, int flag)
+inline File::File()
 {
-    if ( !data.open(name, flag) )
+    FileApi::initHandle(&handle_);
+}
+
+inline File::~File()
+{
+    if (this->isOpen())
     {
-        int err = T::getLastError();
-        DOWNLOADEXCEPTION(err, "File", T::strError(err));
+        close();
     }
 }
 
-template <typename T>
-inline FileBase<T>::~FileBase()
+inline bool File::exist(const char *name)
 {
-    close();
+    return FileApi::exist(name);
 }
 
-template <typename T>
-inline void FileBase<T>::remove(const char *name)
+inline void File::remove(const char *name)
 {
-    if ( !T::remove(name) )
+    if ( !FileApi::remove(name) )
     {
-        int err = T::getLastError();
-        DOWNLOADEXCEPTION(err, "File", T::strError(err));
+        int err = FileApi::getLastError();
+        DOWNLOADEXCEPTION(err, "File", FileApi::strError(err));
     }
 }
 
-template <typename T>
-inline void FileBase<T>::open(const char *name, int flag)
+inline void File::resize(const char *name, size_t len)
 {
-    if ( !data.open(name, flag) )
+    if ( !FileApi::resize(name, len) )
     {
-        int err = T::getLastError();
-        DOWNLOADEXCEPTION(err, "File", T::strError(err));
+        int err = FileApi::getLastError();
+        DOWNLOADEXCEPTION(err, "File", FileApi::strError(err));
     }
 }
 
-template <typename T>
-inline bool FileBase<T>::isOpen()
+inline void File::open(const char *name, int flag)
 {
-    return data.isOpen();
-}
-
-template <typename T>
-inline void FileBase<T>::close()
-{
-    if (!isOpen())
+    if ( !FileApi::open(name, flag, &handle_) )
     {
-        return;
-    }
-
-    if ( !data.close() )
-    {
-        int err = T::getLastError();
-        DOWNLOADEXCEPTION(err, "File", T::strError(err));
+        int err = FileApi::getLastError();
+        DOWNLOADEXCEPTION(err, "File", FileApi::strError(err));
     }
 }
 
-template <typename T>
-inline void FileBase<T>::resize(size_t len)
+inline bool File::isOpen()
 {
-    if ( !data.resize(len) )
-    {
-        int err = T::getLastError();
-        DOWNLOADEXCEPTION(err, "File", T::strError(err));
-    }
+    return FileApi::isOpen(handle_);
 }
 
-template <typename T>
-inline size_t FileBase<T>::read(void *buffer, size_t max)
+inline void File::close()
 {
+    if ( !FileApi::close(handle_) )
+    {
+        int err = FileApi::getLastError();
+        DOWNLOADEXCEPTION(err, "File", FileApi::strError(err));
+    }
+
+    FileApi::initHandle(&handle_);
+}
+
+inline size_t File::read(void *buffer, size_t max)
+{
+    if (!this->isOpen())
+    {
+        DOWNLOADEXCEPTION(-1, "File", "File doesn't open.");
+    }
+
     size_t ret = 0;
-    if ( !data.read(buffer, max, &ret) )
+    if ( !FileApi::read(handle_,buffer, max, &ret) )
     {
-        int err = T::getLastError();
-        DOWNLOADEXCEPTION(err, "File", T::strError(err));
+        int err = FileApi::getLastError();
+        DOWNLOADEXCEPTION(err, "File", FileApi::strError(err));
     }
     return ret;
 }
 
-template <typename T>
-inline size_t FileBase<T>::write(const void *buffer, size_t len)
+inline size_t File::write(const void *buffer, size_t len)
 {
     size_t ret = 0;
-    if ( !data.write(buffer, len, &ret) )
+    if ( !FileApi::write(handle_, buffer, len, &ret) )
     {
-        int err = T::getLastError();
-        DOWNLOADEXCEPTION(err, "File", T::strError(err));
+        int err = FileApi::getLastError();
+        DOWNLOADEXCEPTION(err, "File", FileApi::strError(err));
     }
     return ret;
 }
 
-template <typename T>
-inline void FileBase<T>::seek(size_t pos, SeekFlag flag)
+inline void File::seek(size_t pos, SeekFlag flag)
 {
-    if ( !data.seek(pos, flag) )
+    if ( !FileApi::seek(handle_, pos, flag) )
     {
-        int err = T::getLastError();
-        DOWNLOADEXCEPTION(err, "File", T::strError(err));
+        int err = FileApi::getLastError();
+        DOWNLOADEXCEPTION(err, "File", FileApi::strError(err));
     }
 }
 
-template <typename T>
-inline bool FileBase<T>::seekWithLengthCheck(size_t pos)
-{
-    seek(0, SF_FromEnd);
-    if ( pos > tell() )
-        return false;
-    seek(pos, SF_FromBegin);
-    return true;
-}
-
-template <typename T>
-inline size_t FileBase<T>::tell()
+inline size_t File::tell()
 {
     size_t ret;
-    if ( !data.tell(&ret) )
+    if ( !FileApi::tell(handle_, &ret) )
     {
-        int err = T::getLastError();
-        DOWNLOADEXCEPTION(err, "File", T::strError(err));
+        int err = FileApi::getLastError();
+        DOWNLOADEXCEPTION(err, "File", FileApi::strError(err));
     }
     return ret;
 }
 
-#include "FilePosixApi.h"
-
-typedef FileBase<FilePosixApi> File;
+}
 
 #endif

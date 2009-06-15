@@ -3,6 +3,9 @@
 
 #include <exception>
 
+namespace Utility
+{
+
 class DownloadException : public std::exception
 {
 public:
@@ -62,9 +65,11 @@ inline int DownloadException::error()
     return errno_;
 }
 
-#define DOWNLOADEXCEPTION(errorno, component, reason)     \
-    (DownloadException(__FILE__, __LINE__,              \
-                       errorno, component, reason)        \
+}
+
+#define DOWNLOADEXCEPTION(errorno, component, reason)             \
+    (throw Utility::DownloadException(__FILE__, __LINE__,         \
+                                      errorno, component, reason) \
      )
 
 #endif
