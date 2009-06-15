@@ -1,15 +1,6 @@
 #ifndef DOWNLOAD_FILE_CLASS_HEAD
 #define DOWNLOAD_FILE_CLASS_HEAD
 
-#define OF_READ     0x1
-#define OF_WRITE    0x2
-#define OF_CREATE   0x4
-#define OF_TRUNCATE 0x8
-
-#define SF_BEGIN   0
-#define SF_CURRENT 1
-#define SF_END     2
-
 #include "FilePosixApi.h"
 #include "Utility.h"
 
@@ -25,6 +16,7 @@ public:
     {
         OF_Read     = OF_READ,
         OF_Write    = OF_WRITE,
+        OF_RW       = OF_RDWR,
         OF_Create   = OF_CREATE,
         OF_Truncate = OF_TRUNCATE,
     };
@@ -45,6 +37,7 @@ public:
 
     void open(const char *name, int flag);
     bool isOpen();
+    bool isEof();
     void close();
 
     size_t read(void *buffer, size_t max);
@@ -105,6 +98,11 @@ inline void File::open(const char *name, int flag)
 inline bool File::isOpen()
 {
     return FileApi::isOpen(handle_);
+}
+
+inline bool File::isEof()
+{
+    return FileApi::isEof(handle_);
 }
 
 inline void File::close()

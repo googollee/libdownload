@@ -104,6 +104,36 @@ TEST(FileTest, SeekRead)
     }
 }
 
+TEST(FileTest, CheckEof)
+{
+    try
+    {
+        File f;
+        f.open("./test.file", File::OF_Read);
+        ASSERT_EQ(f.isOpen(), true);
+        ASSERT_EQ(f.isEof(), false);
+
+        f.seek(1, File::SF_FromBegin);
+        ASSERT_EQ(f.isEof(), false);
+
+        char buf[4];
+        f.read(buf, 4);
+        ASSERT_EQ(f.isEof(), true);
+
+        f.close();
+        ASSERT_EQ(f.isOpen(), false);
+
+    }
+    catch (Utility::DownloadException &e)
+    {
+        printf("catch exception: %s:%u error %d in %s: %s\n",
+               e.file(), e.lineoff(),
+               e.error(), e.component(), e.what());
+
+        throw;
+    }
+}
+
 TEST(FileTest, Resize)
 {
     try

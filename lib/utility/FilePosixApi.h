@@ -8,6 +8,17 @@
 
 #include <stdio.h>
 
+#define OF_READ     O_RDONLY
+#define OF_WRITE    O_WRONLY
+#define OF_RDWR     O_RDWR
+#define OF_CREATE   O_CREAT
+#define OF_TRUNCATE O_TRUNC
+
+#define SF_BEGIN   SEEK_SET
+#define SF_CURRENT SEEK_CUR
+#define SF_END     SEEK_END
+
+
 namespace Utility
 {
 
@@ -19,8 +30,6 @@ public:
     static int getLastError();
     static const char* strError(int error);
 
-    static int convOpenFlagToNative(int flag);
-
     static bool exist(const char *name);
     static bool remove(const char *name);
     static bool resize(const char *name, size_t len);
@@ -29,6 +38,7 @@ public:
 
     static bool open(const char *name, int flag, HANDLE *handle);
     static bool isOpen(HANDLE &handle);
+    static bool isEof(HANDLE &handle);
     static bool close(HANDLE &handle);
 
     static bool read(HANDLE &handle, void *buffer, size_t count, size_t *readSize);
@@ -46,23 +56,6 @@ inline int FileApi::getLastError()
 inline const char* FileApi::strError(int error)
 {
     return ::strerror(error);
-}
-
-inline int FileApi::convOpenFlagToNative(int flag)
-{
-    int ret = 0;
-    if ( (flag & OF_READ) != 0 && (flag & OF_WRITE) == 0 )
-        ret |= O_RDONLY;
-    if ( (flag & OF_READ) == 0 && (flag & OF_WRITE) != 0 )
-        ret |= O_WRONLY;
-    if ( (flag & OF_READ) != 0 && (flag & OF_WRITE) != 0 )
-        ret |= O_RDWR;
-    if ( (flag & OF_CREATE) != 0 )
-        ret |= O_CREAT;
-    if ( (flag & OF_TRUNCATE) != 0 )
-        ret |= O_TRUNC;
-
-    return ret;
 }
 
 inline bool FileApi::exist(const char *name )
@@ -96,12 +89,22 @@ inline void FileApi::initHandle(HANDLE *handle)
 inline bool FileApi::open(const char *name, int flag, HANDLE *handle)
 {
 #ifdef O_BINARY
-    *handle = ::open(name, convOpenFlagToNative(flag) | O_BINARY , 0666);
+    *handle = ::open(name, flag | O_BINARY , 0666);
 #else
-    *handle = ::open(name, convOpenFlagToNative(flag), 0666);
+    *handle = ::open(name, flag, 0666);
 #endif
 
     return (*handle != -1);
+}
+
+inline bool FileApi::isEof(HANDLE &handle)
+{
+    off_t pos = ::lseek(handle, 0, SEEK_CUR);
+    off_t end = ::lseek(handle, 0, SEEK_END);
+
+    ::lseek(handle, pos, SEEK_SET);
+
+    return pos == end;
 }
 
 inline bool FileApi::isOpen(HANDLE &handle)
