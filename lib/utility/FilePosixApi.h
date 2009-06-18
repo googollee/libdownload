@@ -8,24 +8,30 @@
 
 #include <stdio.h>
 
-#define OF_READ     O_RDONLY
-#define OF_WRITE    O_WRONLY
-#define OF_RDWR     O_RDWR
-#define OF_CREATE   O_CREAT
-#define OF_TRUNCATE O_TRUNC
-
-#define SF_BEGIN   SEEK_SET
-#define SF_CURRENT SEEK_CUR
-#define SF_END     SEEK_END
-
-
 namespace Utility
 {
 
-class FileApi
+class File
 {
-public:
+private:
     typedef int HANDLE;
+
+public:
+    enum OpenFlag
+    {
+        OF_Read     = O_RDONLY,
+        OF_Write    = O_WRONLY,
+        OF_RW       = O_RDWR,
+        OF_Create   = O_CREAT,
+        OF_Truncate = O_TRUNC,
+    };
+
+    enum SeekFlag
+    {
+        SF_FromBegin   = SEEK_SET,
+        SF_FromCurrent = SEEK_CUR,
+        SF_FromEnd     = SEEK_END,
+    };
 
     static int getLastError();
     static const char* strError(int error);
@@ -34,137 +40,132 @@ public:
     static bool remove(const char *name);
     static bool resize(const char *name, size_t len);
 
-    static void initHandle(HANDLE *handle);
+    File();
+    ~File();
 
-    static bool open(const char *name, int flag, HANDLE *handle);
-    static bool isOpen(HANDLE &handle);
-    static bool isEof(HANDLE &handle);
-    static bool close(HANDLE &handle);
+    bool open(const char *name, int flag);
+    bool isOpen();
+    bool isEof();
+    bool close();
 
-    static bool read(HANDLE &handle, void *buffer, size_t count, size_t *readSize);
-    static bool write(HANDLE &handle, const void *buffer, size_t count, size_t *writeSize);
+    ssize_t read(void *buffer, size_t count);
+    ssize_t write(const void *buffer, size_t count);
 
-    static bool seek(HANDLE &handle, size_t pos, int flag);
-    static bool tell(HANDLE &handle, size_t *ret);
+    bool seek(size_t pos, int flag);
+    ssize_t tell();
+
+private:
+    HANDLE handle_;
 };
 
-inline int FileApi::getLastError()
+inline int File::getLastError()
 {
     return errno;
 }
 
-inline const char* FileApi::strError(int error)
+inline const char* File::strError(int error)
 {
     return ::strerror(error);
 }
 
-inline bool FileApi::exist(const char *name )
+inline bool File::exist(const char *name )
 {
     return (::access(name, F_OK) == 0);
 }
 
-inline bool FileApi::remove(const char *name )
+inline bool File::remove(const char *name )
 {
     return  (::remove(name) == 0);
 }
 
-inline bool FileApi::resize(const char *name, size_t len)
+inline bool File::resize(const char *name, size_t len)
 {
-    HANDLE handle;
-    if (!FileApi::open(name, O_RDWR, &handle))
+    File f;
+
+    if (!f.open(name, OF_RW))
         return false;
 
-    int ret = ::ftruncate(handle, len);
+    int ret = ::ftruncate(f.handle_, len);
 
-    FileApi::close(handle);
+    f.close();
 
     return (ret == 0);
 }
 
-inline void FileApi::initHandle(HANDLE *handle)
+inline File::File()
+    : handle_(-1)
+{}
+
+inline File::~File()
 {
-    *handle = -1;
+    if (handle_ != -1)
+        close();
 }
 
-inline bool FileApi::open(const char *name, int flag, HANDLE *handle)
+inline bool File::open(const char *name, int flag)
 {
 #ifdef O_BINARY
-    *handle = ::open(name, flag | O_BINARY , 0666);
+    handle_ = ::open(name, flag | O_BINARY , 0666);
 #else
-    *handle = ::open(name, flag, 0666);
+    handle_ = ::open(name, flag, 0666);
 #endif
 
-    return (*handle != -1);
+    return (handle_ != -1);
 }
 
-inline bool FileApi::isEof(HANDLE &handle)
+inline bool File::isEof()
 {
-    off_t pos = ::lseek(handle, 0, SEEK_CUR);
-    off_t end = ::lseek(handle, 0, SEEK_END);
+    off_t pos = ::lseek(handle_, 0, SEEK_CUR);
+    off_t end = ::lseek(handle_, 0, SEEK_END);
 
-    ::lseek(handle, pos, SEEK_SET);
+    ::lseek(handle_, pos, SEEK_SET);
 
     return pos == end;
 }
 
-inline bool FileApi::isOpen(HANDLE &handle)
+inline bool File::isOpen()
 {
-    return (handle != -1);
+    return (handle_ != -1);
 }
 
-inline bool FileApi::close(HANDLE &handle)
+inline bool File::close()
 {
-    if (::close(handle) == -1)
+    if (::close(handle_) == -1)
     {
         return false;
     }
+    handle_ = -1;
 
     return true;
 }
 
-inline bool FileApi::read(HANDLE &handle, void *buffer, size_t count, size_t *readSize)
+inline ssize_t File::read(void *buffer, size_t count)
 {
-    ssize_t got = 0;
-
-    got = ::read(handle, buffer, count);
-
-    if (got == -1)
-        return false;
-
-    if (readSize != NULL)
-        *readSize = got;
-
-    return true;
+    return ::read(handle_, buffer, count);
 }
 
-inline bool FileApi::write(HANDLE &handle, const void *buffer, size_t count, size_t *writeSize)
+inline ssize_t File::write(const void *buffer, size_t count)
 {
     ssize_t got = 0, need = count;
     const char *buf = static_cast<const char *>(buffer);
 
-    while ((got = ::write(handle, buf, need)) > 0 && (need -= got) > 0)
+    while ((got = ::write(handle_, buf, need)) > 0 && (need -= got) > 0)
         buf += got;
 
-    if (writeSize != NULL)
-        *writeSize = count - need;
+    if (got == -1)
+        return -1;
 
-    return got != -1;
+    return count - need;
 }
 
-inline bool FileApi::seek(HANDLE &handle, size_t pos, int flag)
+inline bool File::seek(size_t pos, int flag)
 {
-    return (::lseek(handle, pos, flag) != -1);
+    return (::lseek(handle_, pos, flag) != -1);
 }
 
-inline bool FileApi::tell(HANDLE &handle, size_t *ret)
+inline ssize_t File::tell()
 {
-    off_t pos = ::lseek(handle, 0, SEEK_CUR);
-    if (pos == -1)
-    {
-        return false;
-    }
-    *ret = size_t(pos);
-    return true;
+    return ::lseek(handle_, 0, SEEK_CUR);
 }
 
 }
