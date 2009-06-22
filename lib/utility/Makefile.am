@@ -3,10 +3,11 @@ noinst_LTLIBRARIES = libutility.la
 INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/lib/
 
 libutility_la_SOURCES = \
-    Utility.h \
-    DownloadException.h \
-    File.h \
-    FilePosixApi.h
+	Utility.h \
+	DownloadException.h \
+	File.h \
+	FilePosixApi.h \
+	SocketManager.h
 
 #    SingleCurlHelper.h \
 #    BitMap.cpp \

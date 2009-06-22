@@ -30,12 +30,21 @@ check_PROGRAMS =
 TESTS += File_unittest
 check_PROGRAMS += File_unittest
 File_unittest_SOURCES = \
-    utility/File_unittest.cpp \
-    $(top_srcdir)/lib/utility/File.h \
-    $(top_srcdir)/lib/utility/FilePosixApi.h
+	utility/File_unittest.cpp \
+	$(top_srcdir)/lib/utility/File.h \
+	$(top_srcdir)/lib/utility/FilePosixApi.h
 File_unittest_CPPFLAGS =
 File_unittest_LDADD = \
-    gtest/lib/libgtest_main.la
+	gtest/lib/libgtest_main.la
+
+TESTS += SocketManager_unittest
+check_PROGRAMS += SocketManager_unittest
+SocketManager_unittest_SOURCES = \
+	utility/SocketManager_unittest.cpp \
+	$(top_srcdir)/lib/utility/SocketManager.h
+SocketManager_unittest_CPPFLAGS =
+SocketManager_unittest_LDADD = \
+	gtest/lib/libgtest_main.la
 
 #TESTS += SimpleXmlParser_unittest
 #check_PROGRAMS += SimpleXmlParser_unittest
