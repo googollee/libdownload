@@ -7,6 +7,7 @@ libutility_la_SOURCES = \
 	DownloadException.h \
 	File.h \
 	FilePosixApi.h \
+	Allocator.h \
 	SocketManager.h
 
 #    SingleCurlHelper.h \

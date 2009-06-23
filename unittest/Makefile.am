@@ -37,6 +37,15 @@ File_unittest_CPPFLAGS =
 File_unittest_LDADD = \
 	gtest/lib/libgtest_main.la
 
+TESTS += Allocator_unittest
+check_PROGRAMS += Allocator_unittest
+Allocator_unittest_SOURCES = \
+	utility/Allocator_unittest.cpp \
+	$(top_srcdir)/lib/utility/Allocator.h
+Allocator_unittest_CPPFLAGS =
+Allocator_unittest_LDADD = \
+	gtest/lib/libgtest_main.la
+
 TESTS += SocketManager_unittest
 check_PROGRAMS += SocketManager_unittest
 SocketManager_unittest_SOURCES = \
