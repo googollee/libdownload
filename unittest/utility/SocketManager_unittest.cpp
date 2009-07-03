@@ -156,10 +156,12 @@ private:
 
 TEST(SocketManagerTest, RandomTest)
 {
-    const int maxSocket = 1000;
-    const int maxStep = 10000;
+    const int maxSocket  = 1000;
+    const int maxStep    = 1000000;
+    const int maxOrphan  = 10;
+    const int maxConnect = 100;
     srand( time(NULL) );
-    SocketManager m(5, 10);
+    SocketManager m(maxOrphan, maxConnect);
     std::vector<StubSocket> sockets;
 
     for (int i=0; i<maxSocket; ++i)
@@ -172,11 +174,12 @@ TEST(SocketManagerTest, RandomTest)
     {
         for (int i=0; i<maxStep; ++i)
         {
+            printf("%d%%\r", i / (maxStep/100));
             for (int j=0; j<maxSocket; ++j)
             {
                 sockets[j].randNext();
             }
-            ASSERT_TRUE((m.getOrphan() <= 5) && (m.getConnect() <= 10));
+            ASSERT_TRUE((m.getOrphan() <= maxOrphan) && (m.getConnect() <= maxConnect));
         }
     }
     catch (DownloadException &e)
