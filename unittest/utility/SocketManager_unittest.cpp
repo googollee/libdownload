@@ -1,12 +1,16 @@
 #define SOCKET_MANAGER_TEST
 
 #include "utility/SocketManager.h"
+#include "utility/DownloadException.h"
 
 #include <gtest/gtest.h>
 
 #include <time.h>
 
+#include <vector.h>
+
 using Utility::SocketManager;
+using Utility::DownloadException;
 
 TEST(SocketManagerTest, NoLimited)
 {
@@ -64,48 +68,121 @@ TEST(SocketManagerTest, ConnectTest)
     }
 }
 
+class StubSocket
+{
+public:
+    enum Status
+    {
+        S_CLOSED,
+        S_CONNECTING,
+        S_CONNECTED,
+    };
+
+    StubSocket(SocketManager &mng)
+        : mng_(mng),
+          status_(S_CLOSED)
+        {}
+
+    StubSocket(const StubSocket &arg)
+        : mng_(arg.mng_),
+          status_(arg.status_)
+        {}
+
+    StubSocket operator=(const StubSocket &arg)
+        {
+            if (&arg == this)
+                return *this;
+
+            this->mng_ = arg.mng_;
+            this->status_ = arg.status_;
+
+            return *this;
+        }
+
+    void randNext()
+        {
+            int s = rand() % 3;
+            switch (status_)
+            {
+            case S_CLOSED:
+                switch (s)
+                {
+                case 1:
+                case 2:
+                    if (mng_.get())
+                        status_ = S_CONNECTING;
+                    break;
+                case 0:
+                default:
+                    break;
+                }
+                break;
+            case S_CONNECTING:
+                switch (s)
+                {
+                case 1:
+                    mng_.fail();
+                    status_ = S_CLOSED;
+                    break;
+                case 2:
+                    mng_.connect();
+                    status_ = S_CONNECTED;
+                    break;
+                case 0:
+                default:
+                    break;
+                }
+                break;
+            case S_CONNECTED:
+                switch (s)
+                {
+                case 1:
+                case 2:
+                    mng_.close();
+                    status_ = S_CLOSED;
+                    break;
+                case 0:
+                default:
+                    break;
+                }
+                break;
+            }
+        }
+
+private:
+    SocketManager &mng_;
+    Status status_;
+};
+
 TEST(SocketManagerTest, RandomTest)
 {
-    const int max = 1000;
+    const int maxSocket = 1000;
+    const int maxStep = 10000;
     srand( time(NULL) );
     SocketManager m(5, 10);
+    std::vector<StubSocket> sockets;
 
-    for (int i=0; i< max; ++i)
+    for (int i=0; i<maxSocket; ++i)
     {
-        switch (rand() % 4)
+        StubSocket s(m);
+        sockets.push_back(s);
+    }
+
+    try
+    {
+        for (int i=0; i<maxStep; ++i)
         {
-        case 0:
-        {
-            int orphan = m.getOrphan() + 1;
-            int connect = m.getConnect();
-            bool ret = m.get();
-            if (orphan <= 5 && (orphan + connect) <= 10)
+            for (int j=0; j<maxSocket; ++j)
             {
-                if (!ret)
-                {
-                    printf("get() false while orphan = %d, connect = %d\n", m.getOrphan(), m.getConnect());
-                }
-                ASSERT_EQ(ret, true);
+                sockets[j].randNext();
             }
-            else
-            {
-                if (ret)
-                {
-                    printf("get() true while orphan = %d, connect = %d\n", m.getOrphan(), m.getConnect());
-                }
-                ASSERT_EQ(ret, false);
-            }
-            break;
+            ASSERT_TRUE((m.getOrphan() <= 5) && (m.getConnect() <= 10));
         }
-        case 1:
-            m.fail();
-            break;
-        case 2:
-            m.connect();
-            break;
-        case 3:
-            m.close();
-            break;
-        }
+    }
+    catch (DownloadException &e)
+    {
+        printf("orphan = %d, connect = %d\n", m.getOrphan(), m.getConnect());
+        printf("error: %s in %s\n", e.what(), e.component());
+        ASSERT_TRUE(false);
     }
 }

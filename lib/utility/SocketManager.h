@@ -5,6 +5,8 @@
 #include <stdio.h>
 #endif
 
+#include "DownloadException.h"
+
 namespace Utility
 {
 
@@ -58,25 +60,16 @@ bool SocketManager::get()
 {
     if (maxOrphan_ == noLimited && maxConnect_ == noLimited)
     {
-#ifdef SOCKET_MANAGER_TEST
-        printf("no limited\n");
-#endif
         return true;
     }
 
     if (orphan_ >= maxOrphan_)
     {
-#ifdef SOCKET_MANAGER_TEST
-        printf("orphan_ %d >= maxOrphan %d\n", orphan_, maxOrphan_);
-#endif
         return false;
     }
 
     if (maxConnect_ != noLimited && (orphan_ + connect_) >= maxConnect_)
     {
-#ifdef SOCKET_MANAGER_TEST
-        printf("(orphan_ %d + connect_ %d) >= maxConnect_ %d\n", orphan_, connect_, maxConnect_);
-#endif
         return false;
     }
 
@@ -88,25 +81,45 @@ bool SocketManager::get()
 inline
 void SocketManager::fail()
 {
-    if (maxOrphan_ != noLimited && orphan_ > 0)
-        --orphan_;
+    if (maxOrphan_ == noLimited)
+        return;
+
+    if (orphan_ < 1)
+        DOWNLOADEXCEPTION(1, "SocketManager", "orphan < 1 in fail()");
+
+    --orphan_;
 }
 
 inline
 void SocketManager::connect()
 {
-    if (maxOrphan_ != noLimited && orphan_ > 0)
-        --orphan_;
+    if (maxOrphan_ == noLimited)
+        return;
 
-    if (maxConnect_ != noLimited && connect_ < maxConnect_)
-        ++connect_;
+    if (orphan_ < 1)
+        DOWNLOADEXCEPTION(2, "SocketManager", "orphan < 1 in connect()");
+
+    --orphan_;
+
+    if (maxConnect_ == noLimited)
+        return;
+
+    if ((connect_ + orphan_) >= maxConnect_)
+        DOWNLOADEXCEPTION(3, "SocketManager", "connect >= max connect in connect()");
+
+    ++connect_;
 }
 
 inline
 void SocketManager::close()
 {
-    if (maxConnect_ != noLimited && connect_ > 0)
-        --connect_;
+    if (maxConnect_ == noLimited)
+        return;
+
+    if (connect_ < 1)
+        DOWNLOADEXCEPTION(4, "SocketManager", "orphan < 1 in connect()");
+
+    --connect_;
 }
 
 #ifdef SOCKET_MANAGER_TEST
