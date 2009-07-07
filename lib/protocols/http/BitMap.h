@@ -23,7 +23,7 @@
  * block length, it will convert a file position to bit position. But be careful, don't use one BitMap instance between
  * different file at same time.
  *
- * \example ../../unittest/utility/BitMap_unittest.cpp
+ * \example ../../unittest/protocols/BitMap_unittest.cpp
  * You can find API example in unit test file.
  */
 class BitMap

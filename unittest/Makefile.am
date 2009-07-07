@@ -17,16 +17,6 @@ SUBDIRS = gtest
 TESTS =
 check_PROGRAMS =
 
-#TESTS += BitMap_unittest
-#check_PROGRAMS += BitMap_unittest
-#BitMap_unittest_SOURCES = \
-#    utility/BitMap_unittest.cpp \
-#    $(top_srcdir)/lib/utility/BitMap.h \
-#    $(top_srcdir)/lib/utility/BitMap.cpp
-#BitMap_unittest_CPPFLAGS =
-#BitMap_unittest_LDADD = \
-#    gtest/lib/libgtest_main.la
-
 TESTS += File_unittest
 check_PROGRAMS += File_unittest
 File_unittest_SOURCES = \
@@ -65,6 +55,16 @@ SimpleXmlParser_unittest_CPPFLAGS = $(GLIB_CFLAGS)
 SimpleXmlParser_unittest_LDADD = \
 	gtest/lib/libgtest_main.la \
 	$(GLIB_LIBS)
+
+TESTS += BitMap_unittest
+check_PROGRAMS += BitMap_unittest
+BitMap_unittest_SOURCES = \
+	protocols/BitMap_unittest.cpp \
+	$(top_srcdir)/protocols/http/BitMap.h \
+	$(top_srcdir)/lib/protocols/http/BitMap.cpp
+BitMap_unittest_CPPFLAGS =
+BitMap_unittest_LDADD = \
+	gtest/lib/libgtest_main.la
 
 #TESTS += protocols/HttpProtocol_unittest.sh
 #check_PROGRAMS += HttpProtocol_unittest

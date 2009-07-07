@@ -1,4 +1,4 @@
-#include "utility/BitMap.h"
+#include "protocols/http/BitMap.h"
 
 #include <gtest/gtest.h>
 
