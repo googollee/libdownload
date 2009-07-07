@@ -55,16 +55,16 @@ SocketManager_unittest_CPPFLAGS =
 SocketManager_unittest_LDADD = \
 	gtest/lib/libgtest_main.la
 
-#TESTS += SimpleXmlParser_unittest
-#check_PROGRAMS += SimpleXmlParser_unittest
-#SimpleXmlParser_unittest_SOURCES = \
-#    utility/SimpleXmlParser_unittest.cpp \
-#    $(top_srcdir)/lib/utility/SimpleXmlParser.h \
-#    $(top_srcdir)/lib/utility/SimpleXmlParser.cpp
-#SimpleXmlParser_unittest_CPPFLAGS = $(GLIB_CFLAGS)
-#SimpleXmlParser_unittest_LDADD = \
-#    gtest/lib/libgtest_main.la \
-#    $(GLIB_LIBS)
+TESTS += SimpleXmlParser_unittest
+check_PROGRAMS += SimpleXmlParser_unittest
+SimpleXmlParser_unittest_SOURCES = \
+	utility/SimpleXmlParser_unittest.cpp \
+	$(top_srcdir)/lib/utility/SimpleXmlParser.h \
+	$(top_srcdir)/lib/utility/SimpleXmlParser.cpp
+SimpleXmlParser_unittest_CPPFLAGS = $(GLIB_CFLAGS)
+SimpleXmlParser_unittest_LDADD = \
+	gtest/lib/libgtest_main.la \
+	$(GLIB_LIBS)
 
 #TESTS += protocols/HttpProtocol_unittest.sh
 #check_PROGRAMS += HttpProtocol_unittest

@@ -1,17 +1,7 @@
 #include "SimpleXmlParser.h"
 
-#include <glib.h>
-
-struct SimpleXmlParserData
+namespace Utility
 {
-    GMarkupParseContext *context;
-    GError *error;
-
-    SimpleXmlParserData()
-        : context(NULL),
-          error(NULL)
-        {}
-};
 
 static void start_element(GMarkupParseContext *context,
                           const gchar         *element_name,
@@ -62,9 +52,9 @@ static void error(GMarkupParseContext *context,
     parser->error(error->code, error->message);
 }
 
-void setParserError(SimpleXmlParser *parser, void *error)
+void setParserError(SimpleXmlParser *parser, GError *error)
 {
-    parser->d->error = static_cast<GError*>(error);
+    parser->error_ = error;
 }
 
 static GMarkupParser subparser =
@@ -77,9 +67,10 @@ static GMarkupParser subparser =
 };
 
 SimpleXmlParser::SimpleXmlParser()
-    : d(new SimpleXmlParserData)
+    : context_(NULL),
+      error_(NULL)
 {
-    d->context = g_markup_parse_context_new(
+    context_ = g_markup_parse_context_new(
         &subparser,
         G_MARKUP_TREAT_CDATA_AS_TEXT,
         this,
@@ -88,12 +79,13 @@ SimpleXmlParser::SimpleXmlParser()
 
 SimpleXmlParser::~SimpleXmlParser()
 {
-    g_markup_parse_context_free(d->context);
+    g_markup_parse_context_free(context_);
+    g_clear_error(&error_);
 }
 
 bool SimpleXmlParser::feed(const char *str, int len)
 {
-    return g_markup_parse_context_parse(d->context, str, len, &d->error) == TRUE;
+    return g_markup_parse_context_parse(context_, str, len, &error_) == TRUE;
 }
 
 bool SimpleXmlParser::feed(const char *str)
@@ -103,23 +95,23 @@ bool SimpleXmlParser::feed(const char *str)
 
 bool SimpleXmlParser::finish()
 {
-    return g_markup_parse_context_end_parse(d->context, &d->error) == TRUE;
+    return g_markup_parse_context_end_parse(context_, &error_) == TRUE;
 }
 
 const char* SimpleXmlParser::getElement()
 {
-    return g_markup_parse_context_get_element(d->context);
+    return g_markup_parse_context_get_element(context_);
 }
 
 const char* SimpleXmlParser::getError(int *code)
 {
-    if (d->error == NULL)
+    if (error_ == NULL)
         return NULL;
 
     if (code != NULL)
-        *code = d->error->code;
+        *code = error_->code;
 
-    return d->error->message;
+    return error_->message;
 }
 
 void SimpleXmlParser::startElement(const char  *elementName,
@@ -140,3 +132,5 @@ void SimpleXmlParser::passthrough(const char *text,
 
 void SimpleXmlParser::error(int err, const char *errorstr)
 {}
+
+}

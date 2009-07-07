@@ -1,7 +1,12 @@
-#ifndef SIMPLE_XML_PARSER_HEAD
-#define SIMPLE_XML_PARSER_HEAD
+#ifndef SIMPLE_XML_PARSER_CLASS_HEAD
+#define SIMPLE_XML_PARSER_CLASS_HEAD
+
+#include <glib.h>
 
 #include <memory>
+
+namespace Utility
+{
 
 struct SimpleXmlParserData;
 
@@ -45,9 +50,12 @@ public:
     const char* getError(int *code);
 
 private:
-    std::auto_ptr<SimpleXmlParserData> d;
+    GMarkupParseContext *context_;
+    GError *error_;
 
-    friend void setParserError(SimpleXmlParser *parser, void *error);
+    friend void setParserError(SimpleXmlParser *parser, GError *error);
 };
+
+}
 
 #endif

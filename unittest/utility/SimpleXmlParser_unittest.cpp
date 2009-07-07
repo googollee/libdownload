@@ -5,6 +5,7 @@
 #include <sstream>
 
 using namespace std;
+using Utility::SimpleXmlParser;
 
 class MyXmlParser : public SimpleXmlParser
 {
