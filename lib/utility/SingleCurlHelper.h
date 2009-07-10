@@ -28,4 +28,10 @@ private:
         }
 };
 
+#define CHECK_CURLE(rete)                                               \
+    {                                                                   \
+        if (rete != CURLE_OK)                                           \
+            throw DOWNLOADEXCEPTION(rete, "CURL", curl_easy_strerror(rete)); \
+    }
+
 #endif

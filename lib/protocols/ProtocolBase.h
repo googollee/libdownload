@@ -110,8 +110,8 @@ public:
      *
      * \param info The task info.
      */
-    template <typename File, typename Socket>
-    virtual auto_ptr<TaskBase<File, Socket> > getTask(const char *uri,
+    template <typename File>
+    virtual auto_ptr<TaskBase<File> > getTask(const char *uri,
                                                       const char *outputDir,
                                                       const char *outputName,
                                                       const char *options,

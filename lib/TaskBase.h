@@ -15,7 +15,7 @@ enum TaskState
 
 class ProtocolBase;
 
-template<typename File, typename Socket>
+template<typename File>
 class Task
 {
 public:
@@ -75,6 +75,9 @@ public:
             logSignal(this, log);
         }
 
+    Task() {}
+    virtual ~Task() {}
+
     virtual const char *getUri() = 0;
     virtual const char *getOutputDir() = 0;
     virtual const char *getOutputName() = 0;
@@ -96,11 +99,6 @@ public:
     virtual size_t performUpload() = 0;
 
     virtual const char *strerror(int error) = 0;
-
-    virtual ~Task() {}
-
-protected:
-    Task() {}
 };
 
 #endif
