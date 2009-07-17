@@ -1,17 +1,34 @@
 #ifndef HTTP_TASK_HEADER
 #define HTTP_TASK_HEADER
 
-#include "TaskBase.h"
-#include "ProtocolBase.h"
+#include "lib/protocols/TaskBase.h"
+#include "lib/protocols/ProtocolBase.h"
 
-#include "lib/protocols/http/BitMap.h"
+#include "BitMap.h"
+#include "HttpConfigure.h"
 
 #include <string>
 
-template<typename File>
-class HttpTask : public TaskBase<File>
+template <typename File>
+class HttpSession;
+
+template <typename File>
+class HttpTask : public TaskBase
 {
 public:
+    enum Error
+    {
+        CURL_BAD_ALLOC,
+        CURLM_BAD_ALLOC,
+        NULL_INFO,
+        BAD_FILE_LENGTH,
+        FAIL_OPEN_FILE,
+        TASK_EXIST,
+        TASK_NOT_EXIST,
+        XML_PARSE_ERROR,
+        LAST_ERROR = XML_PARSE_ERROR,
+    };
+
     HttpTask();
     virtual ~HttpTask();
 
@@ -39,6 +56,23 @@ public:
 
 private:
     friend class HttpProtocol;
+    friend class HttpSession<File>;
+
+    enum InternalState
+    {
+        HT_INVALID,
+        HT_PREPARE,
+        HT_DOWNLOAD,
+        HT_PART_ERROR,
+        HT_ERROR,
+        HT_FINISH,
+    };
+
+    void initTask();
+    InternalState internalState();
+    void sessionFinish(HttpSession<File> *ses);
+    void seekFile(size_t pos);
+    size_t writeFile(void *buffer, size_t size);
 
     std::string uri;
     std::string outputDir;
@@ -54,6 +88,8 @@ private:
     BitMap downloadBitMap;
     TaskState state;
     ProtocolBase* base;
+
+    File file;
 };
 
 #endif

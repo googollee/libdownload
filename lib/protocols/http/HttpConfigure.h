@@ -11,6 +11,14 @@ struct HttpConfigure
     std::string referer;
     std::string userAgent;
 
+    HttpConfigure()
+        : sessionNumber(5),
+          minSessionBlocks(100),
+          bytesPerBlock(512),
+          referer(""),
+          userAgent("")
+        {}
+
     HttpConfigure(const HttpConfigure& arg)
         : sessionNumber(arg.sessionNumber),
           minSessionBlocks(arg.minSessionBlocks),

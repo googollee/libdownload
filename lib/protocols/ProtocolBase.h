@@ -110,12 +110,11 @@ public:
      *
      * \param info The task info.
      */
-    template <typename File>
-    virtual auto_ptr<TaskBase<File> > getTask(const char *uri,
-                                                      const char *outputDir,
-                                                      const char *outputName,
-                                                      const char *options,
-                                                      const char *comment) = 0;
+    virtual std::auto_ptr<TaskBase> getTask(const char *uri,
+                                            const char *outputDir,
+                                            const char *outputName,
+                                            const char *options,
+                                            const char *comment) = 0;
 };
 
 #endif

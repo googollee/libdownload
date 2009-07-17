@@ -20,9 +20,9 @@ check_PROGRAMS =
 TESTS += File_unittest
 check_PROGRAMS += File_unittest
 File_unittest_SOURCES = \
-	utility/File_unittest.cpp \
 	$(top_srcdir)/lib/utility/File.h \
-	$(top_srcdir)/lib/utility/FilePosixApi.h
+	$(top_srcdir)/lib/utility/FilePosixApi.h \
+	utility/File_unittest.cpp
 File_unittest_CPPFLAGS =
 File_unittest_LDADD = \
 	gtest/lib/libgtest_main.la
@@ -30,8 +30,8 @@ File_unittest_LDADD = \
 TESTS += Allocator_unittest
 check_PROGRAMS += Allocator_unittest
 Allocator_unittest_SOURCES = \
-	utility/Allocator_unittest.cpp \
-	$(top_srcdir)/lib/utility/Allocator.h
+	$(top_srcdir)/lib/utility/Allocator.h \
+	utility/Allocator_unittest.cpp
 Allocator_unittest_CPPFLAGS =
 Allocator_unittest_LDADD = \
 	gtest/lib/libgtest_main.la
@@ -39,8 +39,8 @@ Allocator_unittest_LDADD = \
 TESTS += LocalPtr_unittest
 check_PROGRAMS += LocalPtr_unittest
 LocalPtr_unittest_SOURCES = \
-	utility/LocalPtr_unittest.cpp \
-	$(top_srcdir)/lib/utility/LocalPtr.h
+	$(top_srcdir)/lib/utility/LocalPtr.h \
+	utility/LocalPtr_unittest.cpp
 LocalPtr_unittest_CPPFLAGS =
 LocalPtr_unittest_LDADD = \
 	gtest/lib/libgtest_main.la
@@ -48,8 +48,8 @@ LocalPtr_unittest_LDADD = \
 TESTS += SocketManager_unittest
 check_PROGRAMS += SocketManager_unittest
 SocketManager_unittest_SOURCES = \
-	utility/SocketManager_unittest.cpp \
-	$(top_srcdir)/lib/utility/SocketManager.h
+	$(top_srcdir)/lib/utility/SocketManager.h \
+	utility/SocketManager_unittest.cpp
 SocketManager_unittest_CPPFLAGS =
 SocketManager_unittest_LDADD = \
 	gtest/lib/libgtest_main.la
@@ -57,9 +57,9 @@ SocketManager_unittest_LDADD = \
 TESTS += SimpleXmlParser_unittest
 check_PROGRAMS += SimpleXmlParser_unittest
 SimpleXmlParser_unittest_SOURCES = \
-	utility/SimpleXmlParser_unittest.cpp \
 	$(top_srcdir)/lib/utility/SimpleXmlParser.h \
-	$(top_srcdir)/lib/utility/SimpleXmlParser.cpp
+	$(top_srcdir)/lib/utility/SimpleXmlParser.cpp \
+	utility/SimpleXmlParser_unittest.cpp
 SimpleXmlParser_unittest_CPPFLAGS = $(GLIB_CFLAGS)
 SimpleXmlParser_unittest_LDADD = \
 	gtest/lib/libgtest_main.la \
@@ -68,12 +68,33 @@ SimpleXmlParser_unittest_LDADD = \
 TESTS += BitMap_unittest
 check_PROGRAMS += BitMap_unittest
 BitMap_unittest_SOURCES = \
-	protocols/BitMap_unittest.cpp \
-	$(top_srcdir)/protocols/http/BitMap.h \
-	$(top_srcdir)/lib/protocols/http/BitMap.cpp
+	$(top_srcdir)/lib/protocols/http/BitMap.h \
+	$(top_srcdir)/lib/protocols/http/BitMap.cpp \
+	protocols/BitMap_unittest.cpp
 BitMap_unittest_CPPFLAGS =
 BitMap_unittest_LDADD = \
 	gtest/lib/libgtest_main.la
+
+TESTS += HttpSession_unittest
+check_PROGRAMS += HttpSession_unittest
+HttpSession_unittest_SOURCES = \
+	$(top_srcdir)/lib/utility/File.h \
+	$(top_srcdir)/lib/utility/FilePosixApi.h \
+	$(top_srcdir)/lib/protocols/http/BitMap.h \
+	$(top_srcdir)/lib/protocols/http/BitMap.cpp \
+	$(top_srcdir)/lib/protocols/http/HttpConfigure.h \
+	$(top_srcdir)/lib/protocols/http/HttpSession.h \
+	$(top_srcdir)/lib/protocols/http/HttpSession.inc \
+	$(top_srcdir)/lib/protocols/http/HttpTask.h \
+	protocols/HttpSession_unittest.cpp
+HttpSession_unittest_CPPFLAGS = \
+	${LIBCURL_CPPFLAGS} \
+	${BOOST_CPPFLAGS}
+HttpSession_unittest_LDADD = \
+	gtest/lib/libgtest_main.la \
+	${LIBCURL_LIBS} \
+	${BOOST_LDFLAGS} \
+	${BOOST_SIGNALS_LIB}
 
 #TESTS += protocols/HttpProtocol_unittest.sh
 #check_PROGRAMS += HttpProtocol_unittest

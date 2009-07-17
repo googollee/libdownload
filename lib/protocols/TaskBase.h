@@ -8,15 +8,15 @@
 enum TaskState
 {
     TASK_WAIT,
-    TASK_WORK,
+    TASK_DOWNLOAD,
+    TASK_UPLOAD,
     TASK_FINISH,
     TASK_ERROR,
 };
 
 class ProtocolBase;
 
-template<typename File>
-class Task
+class TaskBase
 {
 public:
     /**
@@ -26,7 +26,7 @@ public:
      * \param info The finished task's info.
      *
      */
-    static boost::signal<void (Task *task)> downloadFinishSignal;
+    static boost::signal<void (TaskBase *task)> downloadFinishSignal;
 
     /**
      * \brief Callback when task upload finish.
@@ -34,7 +34,7 @@ public:
      * When task Upload finish, call for noticing manager.
      * \param info The finished task's info.
      */
-    static boost::signal<void (Task *task)> uploadFinishSignal;
+    static boost::signal<void (TaskBase *task)> uploadFinishSignal;
 
     /**
      * \brief Callback when task meet error.
@@ -43,7 +43,7 @@ public:
      * \param info  The error task's info.
      * \param error The error number.
      */
-    static boost::signal<void (Task *task, int error)> errorSignal;
+    static boost::signal<void (TaskBase *task, int error)> errorSignal;
 
     /**
      * \brief Callback when task need log something.
@@ -53,7 +53,7 @@ public:
      * \param info The task's info which need be logged.
      * \param log  Log text.
      */
-    static boost::signal<void (Task *task, const char *log)> logSignal;
+    static boost::signal<void (TaskBase *task, const char *log)> logSignal;
 
     void downloadFinish()
         {
@@ -67,7 +67,7 @@ public:
 
     void error(int error)
         {
-            taskErrorSignal(this, error);
+            errorSignal(this, error);
         }
 
     void log(const char *log)
@@ -75,8 +75,8 @@ public:
             logSignal(this, log);
         }
 
-    Task() {}
-    virtual ~Task() {}
+    TaskBase() {}
+    virtual ~TaskBase() {}
 
     virtual const char *getUri() = 0;
     virtual const char *getOutputDir() = 0;
