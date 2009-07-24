@@ -1,18 +1,18 @@
 #ifndef HTTP_TASK_HEADER
 #define HTTP_TASK_HEADER
 
+#include "lib/utility/FileManager.h"
+
 #include "lib/protocols/TaskBase.h"
 #include "lib/protocols/ProtocolBase.h"
 
+#include "HttpSession.h"
 #include "BitMap.h"
 #include "HttpConfigure.h"
 
+#include <vector>
 #include <string>
 
-template <typename File>
-class HttpSession;
-
-template <typename File>
 class HttpTask : public TaskBase
 {
 public:
@@ -56,7 +56,7 @@ public:
 
 private:
     friend class HttpProtocol;
-    friend class HttpSession<File>;
+    friend class HttpSession;
 
     enum InternalState
     {
@@ -89,7 +89,8 @@ private:
     TaskState state;
     ProtocolBase* base;
 
-    File file;
+    FileManager file;
+    std::vector<HttpSession> sessions;
 };
 
 #endif

@@ -12,59 +12,36 @@ using Utility::File;
 std::string uri;
 HttpSession<File> *ses = NULL;
 
-template<typename File>
-HttpTask<File>::HttpTask() {}
-template<typename File>
-HttpTask<File>::~HttpTask() {}
-template<typename File>
-const char *HttpTask<File>::getUri() { return uri.c_str(); }
-template<typename File>
-const char *HttpTask<File>::getOutputDir() { return NULL; }
-template<typename File>
-const char *HttpTask<File>::getOutputName() { return NULL; }
-template<typename File>
-const char *HttpTask<File>::getOptions() { return NULL; }
-template<typename File>
-const char *HttpTask<File>::getMimeType() { return NULL; }
-template<typename File>
-const char *HttpTask<File>::getComment() { return NULL; }
-template<typename File>
-size_t      HttpTask<File>::getTotalSize() { return 0; }
-template<typename File>
-size_t      HttpTask<File>::getDownloadSize() { return 0; }
-template<typename File>
-size_t      HttpTask<File>::getUploadSize() { return 0; }
-template<typename File>
-int         HttpTask<File>::getTotalSource() { return 0; }
-template<typename File>
-int         HttpTask<File>::getValidSource() { return 0; }
-template<typename File>
-std::vector<bool> HttpTask<File>::getValidBitmap() { return std::vector<bool>(); }
-template<typename File>
-std::vector<bool> HttpTask<File>::getDownloadBitmap() { return std::vector<bool>(); }
-template<typename File>
-ProtocolBase *HttpTask<File>::getProtocol() { return NULL; }
-template<typename File>
-void HttpTask<File>::getFdSet(fd_set *read, fd_set *write, fd_set *exc, int *max) {}
-template<typename File>
-size_t HttpTask<File>::performDownload() { return 0; }
-template<typename File>
-size_t HttpTask<File>::performUpload() { return 0; }
-template<typename File>
-const char *HttpTask<File>::strerror(int error) { error = error; return NULL; }
-template<typename File>
-TaskState HttpTask<File>::getState() { return TASK_WAIT; }
+HttpTask::HttpTask() {}
+HttpTask::~HttpTask() {}
+const char *HttpTask::getUri() { return uri.c_str(); }
+const char *HttpTask::getOutputDir() { return NULL; }
+const char *HttpTask::getOutputName() { return NULL; }
+const char *HttpTask::getOptions() { return NULL; }
+const char *HttpTask::getMimeType() { return NULL; }
+const char *HttpTask::getComment() { return NULL; }
+size_t      HttpTask::getTotalSize() { return 0; }
+size_t      HttpTask::getDownloadSize() { return 0; }
+size_t      HttpTask::getUploadSize() { return 0; }
+int         HttpTask::getTotalSource() { return 0; }
+int         HttpTask::getValidSource() { return 0; }
+std::vector<bool> HttpTask::getValidBitmap() { return std::vector<bool>(); }
+std::vector<bool> HttpTask::getDownloadBitmap() { return std::vector<bool>(); }
+ProtocolBase *HttpTask::getProtocol() { return NULL; }
+void   HttpTask::getFdSet(fd_set *read, fd_set *write, fd_set *exc, int *max) {}
+size_t HttpTask::performDownload() { return 0; }
+size_t HttpTask::performUpload() { return 0; }
+const char *HttpTask::strerror(int error) { error = error; return NULL; }
+TaskState HttpTask::getState() { return TASK_WAIT; }
 
 int s = 0;
 
-template<typename File>
-typename HttpTask<File>::InternalState HttpTask<File>::internalState()
+HttpTask::InternalState HttpTask::internalState()
 {
-    return (typename HttpTask<File>::InternalState)s;
+    return (typename HttpTask::InternalState)s;
 }
 
-template<typename File>
-void HttpTask<File>::initTask()
+void HttpTask::initTask()
 {
     file.open("./test.data", File::OF_Write | File::OF_Create);
     s = (int)HT_DOWNLOAD;
@@ -76,20 +53,17 @@ void HttpTask<File>::initTask()
     ses->setLength(long(length));
 }
 
-template<typename File>
-void HttpTask<File>::sessionFinish(HttpSession<File> *ses)
+void HttpTask::sessionFinish(HttpSession<File> *ses)
 {
     file.close();
 }
 
-template<typename File>
-void HttpTask<File>::seekFile(size_t pos)
+void HttpTask::seekFile(size_t pos)
 {
     file.seek(pos, File::SF_FromBegin);
 }
 
-template<typename File>
-size_t HttpTask<File>::writeFile(void *buffer, size_t size)
+size_t HttpTask::writeFile(void *buffer, size_t size)
 {
     return file.write(buffer, size);
 }

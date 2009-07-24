@@ -6,8 +6,7 @@
             throw DOWNLOADEXCEPTION(rete, "CURL", curl_easy_strerror(rete)); \
     }
 
-template <typename File>
-HttpSession<File>::HttpSession(HttpTask<File>& task, size_t pos, long length)
+HttpSession::HttpSession(HttpTask<File>& task, size_t pos, long length)
     : task_(task),
       handle_(curl_easy_init()),
       pos_(pos),
@@ -44,14 +43,12 @@ HttpSession<File>::HttpSession(HttpTask<File>& task, size_t pos, long length)
     }
 }
 
-template <typename File>
-HttpSession<File>::~HttpSession()
+HttpSession::~HttpSession()
 {
     curl_easy_cleanup(handle_);
 }
 
-template <typename File>
-void HttpSession<File>::reset(size_t pos, int length)
+void HttpSession::reset(size_t pos, int length)
 {
     pos_ = pos;
     length_ = length;
@@ -79,8 +76,7 @@ void HttpSession<File>::reset(size_t pos, int length)
     }
 }
 
-template <typename File>
-bool HttpSession<File>::checkFinish()
+bool HttpSession::checkFinish()
 {
     LOG(0, "check task %p session %p from %lu, len %l\n",
         &task_, this, pos_, length_);
@@ -96,8 +92,7 @@ bool HttpSession<File>::checkFinish()
     return true;
 }
 
-template <typename File>
-long HttpSession<File>::getResponseCode()
+long HttpSession::getResponseCode()
 {
     long ret = 0;
     CURLcode rete = curl_easy_getinfo(handle_, CURLINFO_RESPONSE_CODE, &ret);
@@ -106,8 +101,7 @@ long HttpSession<File>::getResponseCode()
     return ret;
 }
 
-template <typename File>
-size_t HttpSession<File>::writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession *ses)
+size_t HttpSession::writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession *ses)
 {
     if (ses->task_.internalState() == HttpTask<File>::HT_PREPARE)
     {

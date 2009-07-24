@@ -1,11 +1,10 @@
 #ifndef HTTP_SESSION_HEAD
 #define HTTP_SESSION_HEAD
 
-#include "HttpTask.h"
-
 #include <curl/curl.h>
 
-template <typename File>
+class HttpTask;
+
 class HttpSession
 {
 public:
@@ -16,7 +15,7 @@ public:
     bool checkFinish();
     long getResponseCode();
 
-    HttpTask<File>& task() { return task_; }
+    HttpTask& task() { return task_; }
     CURL* handle()   { return handle_; }
     size_t pos()     { return pos_; }
     int length()     { return length_; }
@@ -28,7 +27,7 @@ private:
 
     static const long UNKNOWN_LEN = -1;
 
-    HttpTask<File>& task_; // a reference.
+    HttpTask& task_; // a reference.
     CURL* handle_;  // a reference.
     size_t pos_;
     long length_;  // -1 mean unknow length.
