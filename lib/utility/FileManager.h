@@ -3,6 +3,11 @@
 
 #include "File.h"
 
-typename File FileManager;
+namespace Utility
+{
+
+typedef File FileManager;
+
+}
 
 #endif

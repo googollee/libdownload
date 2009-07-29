@@ -8,7 +8,7 @@ class HttpTask;
 class HttpSession
 {
 public:
-    HttpSession(HttpTask<File>& task, size_t pos = 0, long length = UNKNOWN_LEN);
+    HttpSession(HttpTask& task, size_t pos = 0, long length = UNKNOWN_LEN);
     ~HttpSession();
 
     void reset(size_t pos, int length);

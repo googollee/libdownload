@@ -80,11 +80,14 @@ check_PROGRAMS += HttpSession_unittest
 HttpSession_unittest_SOURCES = \
 	$(top_srcdir)/lib/utility/File.h \
 	$(top_srcdir)/lib/utility/FilePosixApi.h \
+	$(top_srcdir)/lib/utility/FileManager.h \
+	$(top_srcdir)/lib/protocols/TaskBase.h \
+	$(top_srcdir)/lib/protocols/TaskBase.cpp \
 	$(top_srcdir)/lib/protocols/http/BitMap.h \
 	$(top_srcdir)/lib/protocols/http/BitMap.cpp \
 	$(top_srcdir)/lib/protocols/http/HttpConfigure.h \
 	$(top_srcdir)/lib/protocols/http/HttpSession.h \
-	$(top_srcdir)/lib/protocols/http/HttpSession.inc \
+	$(top_srcdir)/lib/protocols/http/HttpSession.cpp \
 	$(top_srcdir)/lib/protocols/http/HttpTask.h \
 	protocols/HttpSession_unittest.cpp
 HttpSession_unittest_CPPFLAGS = \

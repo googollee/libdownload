@@ -53,26 +53,26 @@ public:
      * \param info The task's info which need be logged.
      * \param log  Log text.
      */
-    static boost::signal<void (TaskBase *task, const char *log)> logSignal;
+    static boost::signal<void (TaskBase *task, const char* log)> logSignal;
 
     void downloadFinish()
         {
-            downloadFinishSignal(this);
+            TaskBase::downloadFinishSignal(this);
         }
 
     void uploadFinish()
         {
-            uploadFinishSignal(this);
+            TaskBase::uploadFinishSignal(this);
         }
 
     void error(int error)
         {
-            errorSignal(this, error);
+            TaskBase::errorSignal(this, error);
         }
 
     void log(const char *log)
         {
-            logSignal(this, log);
+            TaskBase::logSignal(this, log);
         }
 
     TaskBase() {}

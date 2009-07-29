@@ -1,7 +1,7 @@
 #include "utility/File.h"
 
 #include "protocols/http/HttpTask.h"
-#include "protocols/http/HttpSession.inc"
+#include "protocols/http/HttpSession.h"
 
 #include <gtest/gtest.h>
 
@@ -10,7 +10,7 @@
 using Utility::File;
 
 std::string uri;
-HttpSession<File> *ses = NULL;
+HttpSession *ses = NULL;
 
 HttpTask::HttpTask() {}
 HttpTask::~HttpTask() {}
@@ -38,7 +38,7 @@ int s = 0;
 
 HttpTask::InternalState HttpTask::internalState()
 {
-    return (typename HttpTask::InternalState)s;
+    return (HttpTask::InternalState)s;
 }
 
 void HttpTask::initTask()
@@ -53,7 +53,7 @@ void HttpTask::initTask()
     ses->setLength(long(length));
 }
 
-void HttpTask::sessionFinish(HttpSession<File> *ses)
+void HttpTask::sessionFinish(HttpSession *ses)
 {
     file.close();
 }
@@ -70,8 +70,8 @@ size_t HttpTask::writeFile(void *buffer, size_t size)
 
 TEST(HttpSessionTest, Normal)
 {
-    HttpTask<File> task;
-    HttpSession<File> session(task);
+    HttpTask task;
+    HttpSession session(task);
     ses = &session;
 
     curl_easy_perform(session.handle());

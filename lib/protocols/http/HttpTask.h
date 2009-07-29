@@ -70,7 +70,7 @@ private:
 
     void initTask();
     InternalState internalState();
-    void sessionFinish(HttpSession<File> *ses);
+    void sessionFinish(HttpSession *ses);
     void seekFile(size_t pos);
     size_t writeFile(void *buffer, size_t size);
 
@@ -89,7 +89,7 @@ private:
     TaskState state;
     ProtocolBase* base;
 
-    FileManager file;
+    Utility::FileManager file;
     std::vector<HttpSession> sessions;
 };
 

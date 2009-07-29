@@ -1,4 +1,6 @@
 #include "HttpSession.h"
+#include "HttpTask.h"
+#include "utility/Utility.h"
 
 #define CHECK_CURLE(rete)                                               \
     {                                                                   \
@@ -6,7 +8,7 @@
             throw DOWNLOADEXCEPTION(rete, "CURL", curl_easy_strerror(rete)); \
     }
 
-HttpSession::HttpSession(HttpTask<File>& task, size_t pos, long length)
+HttpSession::HttpSession(HttpTask& task, size_t pos, long length)
     : task_(task),
       handle_(curl_easy_init()),
       pos_(pos),
@@ -20,12 +22,12 @@ HttpSession::HttpSession(HttpTask<File>& task, size_t pos, long length)
     }
 
     if (handle_ == NULL)
-        throw DOWNLOADEXCEPTION(HttpTask<File>::CURL_BAD_ALLOC, "CURL", task_.strerror(HttpTask<File>::CURL_BAD_ALLOC));
+        throw DOWNLOADEXCEPTION(HttpTask::CURL_BAD_ALLOC, "CURL", task_.strerror(HttpTask::CURL_BAD_ALLOC));
 
     CURLcode rete = curl_easy_setopt(handle_, CURLOPT_URL, task_.getUri());
     CHECK_CURLE(rete);
 
-    rete = curl_easy_setopt(handle_, CURLOPT_WRITEFUNCTION, &HttpSession<Utility::File>::writeCallback);
+    rete = curl_easy_setopt(handle_, CURLOPT_WRITEFUNCTION, &HttpSession::writeCallback);
     CHECK_CURLE(rete);
 
     rete = curl_easy_setopt(handle_, CURLOPT_WRITEDATA, this);
@@ -55,10 +57,10 @@ void HttpSession::reset(size_t pos, int length)
 
     curl_easy_reset(handle_);
 
-    CURLcode rete = curl_easy_setopt(handle_, CURLOPT_URL, task.uri());
+    CURLcode rete = curl_easy_setopt(handle_, CURLOPT_URL, task_.getUri());
     CHECK_CURLE(rete);
 
-    rete = curl_easy_setopt(handle_, CURLOPT_WRITEFUNCTION, writeCallback);
+    rete = curl_easy_setopt(handle_, CURLOPT_WRITEFUNCTION, &HttpSession::writeCallback);
     CHECK_CURLE(rete);
 
     rete = curl_easy_setopt(handle_, CURLOPT_WRITEDATA, this);
@@ -78,7 +80,7 @@ void HttpSession::reset(size_t pos, int length)
 
 bool HttpSession::checkFinish()
 {
-    LOG(0, "check task %p session %p from %lu, len %l\n",
+    LOG(0, "check task %p session %p from %lu, len %ld\n",
         &task_, this, pos_, length_);
 
     if (length_ > 0 || length_ == UNKNOWN_LEN) // unknown length will disconnect directly, no need check here.
@@ -103,12 +105,12 @@ long HttpSession::getResponseCode()
 
 size_t HttpSession::writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession *ses)
 {
-    if (ses->task_.internalState() == HttpTask<File>::HT_PREPARE)
+    if (ses->task_.internalState() == HttpTask::HT_PREPARE)
     {
         ses->task_.initTask();
     }
 
-    size_t shouldWrite = size;
+    size_t shouldWrite = size * nmemb;
     if (ses->length_ > 0)
     {
         // got the file size from server.
