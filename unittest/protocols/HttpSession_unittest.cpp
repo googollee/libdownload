@@ -28,7 +28,13 @@ int         HttpTask::getValidSource() { return 0; }
 std::vector<bool> HttpTask::getValidBitmap() { return std::vector<bool>(); }
 std::vector<bool> HttpTask::getDownloadBitmap() { return std::vector<bool>(); }
 ProtocolBase *HttpTask::getProtocol() { return NULL; }
-void   HttpTask::getFdSet(fd_set *read, fd_set *write, fd_set *exc, int *max) {}
+void   HttpTask::getFdSet(fd_set *read, fd_set *write, fd_set *exc, int *max)
+{
+    (void)read;
+    (void)write;
+    (void)exc;
+    (void)max;
+}
 size_t HttpTask::performDownload() { return 0; }
 size_t HttpTask::performUpload() { return 0; }
 const char *HttpTask::strerror(int error) { error = error; return NULL; }
@@ -55,6 +61,8 @@ void HttpTask::initTask()
 
 void HttpTask::sessionFinish(HttpSession *ses)
 {
+    (void)ses;
+
     file.close();
 }
 

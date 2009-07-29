@@ -10,6 +10,9 @@ static void start_element(GMarkupParseContext *context,
                           gpointer             user_data,
                           GError             **error)
 {
+    (void)context;
+    (void)error;
+
     SimpleXmlParser *parser = (SimpleXmlParser*)user_data;
     parser->startElement(element_name, attribute_names, attribute_values);
 }
@@ -19,6 +22,9 @@ static void end_element(GMarkupParseContext *context,
                         gpointer             user_data,
                         GError             **error)
 {
+    (void)context;
+    (void)error;
+
     SimpleXmlParser *parser = (SimpleXmlParser*)user_data;
     parser->endElement(element_name);
 }
@@ -29,6 +35,9 @@ static void text(GMarkupParseContext *context,
                  gpointer             user_data,
                  GError             **error)
 {
+    (void)context;
+    (void)error;
+
     SimpleXmlParser *parser = (SimpleXmlParser*)user_data;
     parser->text(text, text_len);
 }
@@ -39,6 +48,9 @@ static void passthrough(GMarkupParseContext *context,
                         gpointer             user_data,
                         GError             **error)
 {
+    (void)context;
+    (void)error;
+
     SimpleXmlParser *parser = (SimpleXmlParser*)user_data;
     parser->passthrough(passthrough_text, text_len);
 }
@@ -47,6 +59,9 @@ static void error(GMarkupParseContext *context,
                   GError              *error,
                   gpointer             user_data)
 {
+    (void)context;
+    (void)error;
+
     SimpleXmlParser *parser = (SimpleXmlParser*)user_data;
     setParserError(parser, error);
     parser->error(error->code, error->message);
@@ -117,20 +132,35 @@ const char* SimpleXmlParser::getError(int *code)
 void SimpleXmlParser::startElement(const char  *elementName,
                                    const char **attributeNames,
                                    const char **attributeValues)
-{}
+{
+    (void)elementName;
+    (void)attributeNames;
+    (void)attributeValues;
+}
 
 void SimpleXmlParser::endElement(const char *elementName)
-{}
+{
+    (void)elementName;
+}
 
 void SimpleXmlParser::text(const char *text,
                            size_t textLen)
-{}
+{
+    (void)text;
+    (void)textLen;
+}
 
 void SimpleXmlParser::passthrough(const char *text,
                                   size_t textLen)
-{}
+{
+    (void)text;
+    (void)textLen;
+}
 
 void SimpleXmlParser::error(int err, const char *errorstr)
-{}
+{
+    (void)err;
+    (void)errorstr;
+}
 
 }
