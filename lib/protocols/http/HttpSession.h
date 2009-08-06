@@ -23,7 +23,7 @@ public:
     void setLength(long length) { length_ = length; }
 
 private:
-    size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession *ses);
+    static size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession* ses);
 
     static const long UNKNOWN_LEN = -1;
 

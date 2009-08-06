@@ -9,17 +9,17 @@
 
 using Utility::File;
 
-std::string uri;
+std::string testUri;
 HttpSession *ses = NULL;
 
 HttpTask::HttpTask() {}
 HttpTask::~HttpTask() {}
-const char *HttpTask::getUri() { return uri.c_str(); }
-const char *HttpTask::getOutputDir() { return NULL; }
-const char *HttpTask::getOutputName() { return NULL; }
-const char *HttpTask::getOptions() { return NULL; }
-const char *HttpTask::getMimeType() { return NULL; }
-const char *HttpTask::getComment() { return NULL; }
+const char* HttpTask::getUri() { return testUri.c_str(); }
+const char* HttpTask::getOutputDir() { return NULL; }
+const char* HttpTask::getOutputName() { return NULL; }
+const char* HttpTask::getOptions() { return NULL; }
+const char* HttpTask::getMimeType() { return NULL; }
+const char* HttpTask::getComment() { return NULL; }
 size_t      HttpTask::getTotalSize() { return 0; }
 size_t      HttpTask::getDownloadSize() { return 0; }
 size_t      HttpTask::getUploadSize() { return 0; }
@@ -28,13 +28,7 @@ int         HttpTask::getValidSource() { return 0; }
 std::vector<bool> HttpTask::getValidBitmap() { return std::vector<bool>(); }
 std::vector<bool> HttpTask::getDownloadBitmap() { return std::vector<bool>(); }
 ProtocolBase *HttpTask::getProtocol() { return NULL; }
-void   HttpTask::getFdSet(fd_set *read, fd_set *write, fd_set *exc, int *max)
-{
-    (void)read;
-    (void)write;
-    (void)exc;
-    (void)max;
-}
+void HttpTask::getFdSet(fd_set* /*read*/, fd_set* /*write*/, fd_set* /*exc*/, int* /*max*/) {}
 size_t HttpTask::performDownload() { return 0; }
 size_t HttpTask::performUpload() { return 0; }
 const char *HttpTask::strerror(int error) { error = error; return NULL; }
@@ -49,6 +43,8 @@ HttpTask::InternalState HttpTask::internalState()
 
 void HttpTask::initTask()
 {
+    printf("in init\n");
+
     file.open("./test.data", File::OF_Write | File::OF_Create);
     s = (int)HT_DOWNLOAD;
 
@@ -56,12 +52,14 @@ void HttpTask::initTask()
     double length;
     curl_easy_getinfo(ehandle, CURLINFO_CONTENT_LENGTH_DOWNLOAD, &length);
 
-    ses->setLength(long(length));
+    if (length > 0)
+        ses->setLength(long(length));
 }
 
 void HttpTask::sessionFinish(HttpSession *ses)
 {
-    (void)ses;
+//     CURLcode rete = curl_easy_pause(ses->handle(), CURLPAUSE_ALL);
+//     CHECK_CURLE(rete);
 
     file.close();
 }
@@ -78,11 +76,33 @@ size_t HttpTask::writeFile(void *buffer, size_t size)
 
 TEST(HttpSessionTest, Normal)
 {
+    testUri = "http://www.boost.org/doc/libs/1_39_0/more/getting_started/unix-variants.html";
+//    testUri = "http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html";
+    s = 1;
+
     HttpTask task;
     HttpSession session(task);
     ses = &session;
 
-    curl_easy_perform(session.handle());
+    CURLcode ret = curl_easy_perform(session.handle());
+    if (ret != CURLE_OK)
+        printf("meet error: %s\n", curl_easy_strerror(ret));
+
+    ses = NULL;
+}
+
+TEST(HttpSessionTest, CantGetRightLenght)
+{
+    testUri = "http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html";
+    s = 1;
+
+    HttpTask task;
+    HttpSession session(task);
+    ses = &session;
+
+    CURLcode ret = curl_easy_perform(session.handle());
+    if (ret != CURLE_OK)
+        printf("meet error: %s\n", curl_easy_strerror(ret));
 
     ses = NULL;
 }

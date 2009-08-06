@@ -157,7 +157,7 @@ private:
 TEST(SocketManagerTest, RandomTest)
 {
     const int maxSocket  = 1000;
-    const int maxStep    = 1000000;
+    const int maxStep    = 10000;
     const int maxOrphan  = 10;
     const int maxConnect = 100;
     srand( time(NULL) );
