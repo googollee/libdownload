@@ -7,7 +7,7 @@
 
 #include <time.h>
 
-#include <vector.h>
+#include <vector>
 
 using Utility::SocketManager;
 using Utility::DownloadException;

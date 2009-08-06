@@ -49,7 +49,7 @@ private:
                 << ": " << data << "\n";;
         }
 
-    void error(int err, const char *errorstr)
+    void error(int /*err*/, const char *errorstr)
         {
             out << "error: " << errorstr << "\n";
         }
