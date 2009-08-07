@@ -8,8 +8,6 @@
             throw DOWNLOADEXCEPTION(rete, "CURL", curl_easy_strerror(rete)); \
     }
 
-size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession* ses);
-
 HttpSession::HttpSession(HttpTask& task, size_t pos, long length)
     : task_(task),
       handle_(curl_easy_init()),
@@ -38,10 +36,14 @@ HttpSession::HttpSession(HttpTask& task, size_t pos, long length)
     rete = curl_easy_setopt(handle_, CURLOPT_PRIVATE, this);
     CHECK_CURLE(rete);
 
+    if (length == 0)
+        throw DOWNLOADEXCEPTION(1, "HTTP", "length can't be 0.");
+
     if (length != UNKNOWN_LEN)
     {
         char range[128] = {0};
-        sprintf(range, "%lu-%lu", pos_, length_);
+        sprintf(range, "%lu-%lu", pos_, pos_ + length_ - 1);
+        printf("range: %s\n", range);
         rete = curl_easy_setopt(handle_, CURLOPT_RANGE, range);
         CHECK_CURLE(rete);
     }
@@ -105,24 +107,25 @@ long HttpSession::getResponseCode()
 
 size_t HttpSession::writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession* ses)
 {
-    printf("buffer: %p, size: %lu, nmemb: %lu, ses: %p\n", buffer, size, nmemb, ses);
-
     if (ses->task_.internalState() == HttpTask::HT_PREPARE)
     {
         ses->task_.initTask();
     }
 
-    size_t shouldWrite = size * nmemb;
+    ssize_t shouldWrite = size * nmemb;
     if (ses->length_ > 0)
     {
         // got the file size from server.
-        if (size > size_t(ses->length_))
+        if (shouldWrite > ses->length_)
             shouldWrite = ses->length_;
 
         ses->task_.seekFile(ses->pos_);
     }
 
-    const size_t writed = ses->task_.writeFile(buffer, shouldWrite);
+    const ssize_t writed = ses->task_.writeFile(buffer, shouldWrite);
+    if (writed == -1)
+        //TODO: need tell task.
+        printf("write fail\n");
 
     if (ses->length_ > 0)
     {

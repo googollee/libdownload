@@ -43,8 +43,6 @@ HttpTask::InternalState HttpTask::internalState()
 
 void HttpTask::initTask()
 {
-    printf("in init\n");
-
     file.open("./test.data", File::OF_Write | File::OF_Create);
     s = (int)HT_DOWNLOAD;
 
@@ -66,7 +64,8 @@ void HttpTask::sessionFinish(HttpSession *ses)
 
 void HttpTask::seekFile(size_t pos)
 {
-    file.seek(pos, File::SF_FromBegin);
+    if (!file.seek(pos, File::SF_FromBegin))
+        printf("seek fail\n");
 }
 
 size_t HttpTask::writeFile(void *buffer, size_t size)
@@ -76,9 +75,12 @@ size_t HttpTask::writeFile(void *buffer, size_t size)
 
 TEST(HttpSessionTest, Normal)
 {
-    testUri = "http://www.boost.org/doc/libs/1_39_0/more/getting_started/unix-variants.html";
-//    testUri = "http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html";
+    testUri = "http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html";
     s = 1;
+    {
+        File f;
+        f.open("./test.data", File::OF_Write | File::OF_Create | File::OF_Truncate);
+    }
 
     HttpTask task;
     HttpSession session(task);
@@ -93,8 +95,12 @@ TEST(HttpSessionTest, Normal)
 
 TEST(HttpSessionTest, CantGetRightLenght)
 {
-    testUri = "http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html";
+    testUri = "http://www.boost.org/doc/libs/1_39_0/more/getting_started/unix-variants.html";
     s = 1;
+    {
+        File f;
+        f.open("./test.data", File::OF_Write | File::OF_Create | File::OF_Truncate);
+    }
 
     HttpTask task;
     HttpSession session(task);
@@ -105,4 +111,62 @@ TEST(HttpSessionTest, CantGetRightLenght)
         printf("meet error: %s\n", curl_easy_strerror(ret));
 
     ses = NULL;
+}
+
+TEST(HttpSessionTest, PartDownload)
+{
+    testUri = "http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html";
+    s = 1;
+    {
+        File f;
+        f.open("./test.data", File::OF_Write | File::OF_Create | File::OF_Truncate);
+    }
+
+    HttpTask task;
+    HttpSession session(task, 0, 100);
+    ses = &session;
+
+    CURLcode ret = curl_easy_perform(session.handle());
+    if (ret != CURLE_OK)
+        printf("meet error: %s\n", curl_easy_strerror(ret));
+
+    ses = NULL;
+}
+
+TEST(HttpSessionTest, PartDownloadFromMiddle)
+{
+    {
+        File f;
+        f.open("./test.data", File::OF_Write | File::OF_Create | File::OF_Truncate);
+    }
+
+    {
+        testUri = "http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html";
+        s = 1;
+
+        HttpTask task;
+        HttpSession session(task, 0, 50);
+        ses = &session;
+
+        CURLcode ret = curl_easy_perform(session.handle());
+        if (ret != CURLE_OK)
+            printf("meet error: %s\n", curl_easy_strerror(ret));
+
+        ses = NULL;
+    }
+
+    {
+        testUri = "http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html";
+        s = 1;
+
+        HttpTask task;
+        HttpSession session(task, 50, 50);
+        ses = &session;
+
+        CURLcode ret = curl_easy_perform(session.handle());
+        if (ret != CURLE_OK)
+            printf("meet error: %s\n", curl_easy_strerror(ret));
+
+        ses = NULL;
+    }
 }
