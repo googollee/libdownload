@@ -1,9 +1,11 @@
 #ifndef TASK_HEADER
 #define TASK_HEADER
 
-#include "includes.h"
-
 #include <vector>
+
+#include <boost/signals.hpp>
+
+#include "utility/socket.h"
 
 enum TaskState
 {
@@ -26,7 +28,7 @@ public:
      * \param info The finished task's info.
      *
      */
-    static boost::signal<void (TaskBase *task)> downloadFinishSignal;
+    static boost::signal<void (TaskBase* task)> downloadFinishSignal;
 
     /**
      * \brief Callback when task upload finish.
@@ -34,7 +36,7 @@ public:
      * When task Upload finish, call for noticing manager.
      * \param info The finished task's info.
      */
-    static boost::signal<void (TaskBase *task)> uploadFinishSignal;
+    static boost::signal<void (TaskBase* task)> uploadFinishSignal;
 
     /**
      * \brief Callback when task meet error.
@@ -43,7 +45,7 @@ public:
      * \param info  The error task's info.
      * \param error The error number.
      */
-    static boost::signal<void (TaskBase *task, int error)> errorSignal;
+    static boost::signal<void (TaskBase* task, int error)> errorSignal;
 
     /**
      * \brief Callback when task need log something.
@@ -53,7 +55,7 @@ public:
      * \param info The task's info which need be logged.
      * \param log  Log text.
      */
-    static boost::signal<void (TaskBase *task, const char* log)> logSignal;
+    static boost::signal<void (TaskBase* task, const char* log)> logSignal;
 
     void downloadFinish()
         {
@@ -70,7 +72,7 @@ public:
             TaskBase::errorSignal(this, error);
         }
 
-    void log(const char *log)
+    void log(const char* log)
         {
             TaskBase::logSignal(this, log);
         }
@@ -78,27 +80,29 @@ public:
     TaskBase() {}
     virtual ~TaskBase() {}
 
-    virtual const char *getUri() = 0;
-    virtual const char *getOutputDir() = 0;
-    virtual const char *getOutputName() = 0;
-    virtual const char *getOptions() = 0;
-    virtual const char *getMimeType() = 0;
-    virtual const char *getComment() = 0;
-    virtual size_t      getTotalSize() = 0;
-    virtual size_t      getDownloadSize() = 0;
-    virtual size_t      getUploadSize() = 0;
-    virtual int         getTotalSource() = 0;
-    virtual int         getValidSource() = 0;
-    virtual std::vector<bool> getValidBitmap() = 0;
-    virtual std::vector<bool> getDownloadBitmap() = 0;
-    virtual TaskState   getState() = 0;
-    virtual ProtocolBase *getProtocol() = 0;
+    virtual const char* uri() = 0;
+    virtual const char* outputDir() = 0;
+    virtual const char* outputName() = 0;
+    virtual const char* options() = 0;
+    virtual const char* mimeType() = 0;
+    virtual const char* comment() = 0;
+    virtual const char* notice() = 0;
+    virtual size_t      totalSize() = 0;
+    virtual size_t      downloadSize() = 0;
+    virtual size_t      uploadSize() = 0;
+    virtual int         totalSource() = 0;
+    virtual int         validSource() = 0;
+    virtual std::vector<bool> validBitmap() = 0;
+    virtual std::vector<bool> downloadBitmap() = 0;
+    virtual TaskState   state() = 0;
+    virtual ProtocolBase* protocol() = 0;
 
-    virtual void getFdSet(fd_set *read, fd_set *write, fd_set *exc, int *max) = 0;
+    virtual void fdSet(fd_set* read, fd_set* write, fd_set* exc, int* max) = 0;
     virtual size_t performDownload() = 0;
     virtual size_t performUpload() = 0;
 
-    virtual const char *strerror(int error) = 0;
+    virtual int error() = 0;
+    virtual const char* strerror(int error) = 0;
 };
 
 #endif

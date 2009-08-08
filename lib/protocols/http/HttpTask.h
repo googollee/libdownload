@@ -23,8 +23,7 @@ public:
         NULL_INFO,
         BAD_FILE_LENGTH,
         FAIL_OPEN_FILE,
-        TASK_EXIST,
-        TASK_NOT_EXIST,
+        FAIL_FILE_IO,
         XML_PARSE_ERROR,
         LAST_ERROR = XML_PARSE_ERROR,
     };
@@ -32,65 +31,68 @@ public:
     HttpTask();
     virtual ~HttpTask();
 
-    virtual const char *getUri();
-    virtual const char *getOutputDir();
-    virtual const char *getOutputName();
-    virtual const char *getOptions();
-    virtual const char *getMimeType();
-    virtual const char *getComment();
-    virtual size_t      getTotalSize();
-    virtual size_t      getDownloadSize();
-    virtual size_t      getUploadSize();
-    virtual int         getTotalSource();
-    virtual int         getValidSource();
-    virtual std::vector<bool> getValidBitmap();
-    virtual std::vector<bool> getDownloadBitmap();
-    virtual TaskState   getState();
-    virtual ProtocolBase *getProtocol();
+    virtual const char* uri();
+    virtual const char* outputDir();
+    virtual const char* outputName();
+    virtual const char* options();
+    virtual const char* mimeType();
+    virtual const char* comment();
+    virtual const char* notice();
+    virtual size_t      totalSize();
+    virtual size_t      downloadSize();
+    virtual size_t      uploadSize();
+    virtual int         totalSource();
+    virtual int         validSource();
+    virtual std::vector<bool> validBitmap();
+    virtual std::vector<bool> downloadBitmap();
+    virtual TaskState   state();
+    virtual ProtocolBase *protocol();
 
-    virtual void getFdSet(fd_set *read, fd_set *write, fd_set *exc, int *max);
+    virtual void fdSet(fd_set* read, fd_set* write, fd_set* exc, int* max);
     virtual size_t performDownload();
     virtual size_t performUpload();
 
-    virtual const char *strerror(int error);
-
-private:
-    friend class HttpProtocol;
-    friend class HttpSession;
+    virtual int error();
+    virtual const char* strerror(int error);
 
     enum InternalState
     {
         HT_INVALID,
         HT_PREPARE,
         HT_DOWNLOAD,
-        HT_PART_ERROR,
+        HT_DOWNLOAD_WITHOUT_LENGTH,
         HT_ERROR,
         HT_FINISH,
     };
 
-    void initTask();
     InternalState internalState();
-    void sessionFinish(HttpSession *ses);
+    void setInternalState(InternalState state);
+    void setError(Error error);
+
+    void initTask();
+    void sessionFinish(HttpSession* ses);
+
     void seekFile(size_t pos);
-    size_t writeFile(void *buffer, size_t size);
+    ssize_t writeFile(void *buffer, size_t size);
 
-    std::string uri;
-    std::string outputDir;
-    std::string outputName;
-    HttpConfigure config;
-    std::string mimeType;
-    std::string comment;
-    size_t totalSize;
-    size_t downloadSize;
-    int totalSource;
-    int validSource;
-    BitMap validBitmap;
-    BitMap downloadBitMap;
-    TaskState state;
-    ProtocolBase* base;
+private:
+    std::string uri_;
+    std::string outputDir_;
+    std::string outputName_;
+    HttpConfigure config_;
+    std::string mimeType_;
+    std::string comment_;
+    size_t totalSize_;
+    size_t downloadSize_;
+    int totalSource_;
+    int validSource_;
+    BitMap validBitmap_;
+    BitMap downloadBitMap_;
+    TaskState state_;
+    ProtocolBase* base_;
 
-    Utility::FileManager file;
-    std::vector<HttpSession> sessions;
+    Utility::FileManager file_;
+    std::vector<HttpSession> sessions_;
 };
 
 #endif

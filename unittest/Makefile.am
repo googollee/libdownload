@@ -75,7 +75,7 @@ BitMap_unittest_CPPFLAGS =
 BitMap_unittest_LDADD = \
 	gtest/lib/libgtest_main.la
 
-TESTS += HttpSession_unittest
+TESTS += protocols/HttpSession_unittest.sh
 check_PROGRAMS += HttpSession_unittest
 HttpSession_unittest_SOURCES = \
 	$(top_srcdir)/lib/utility/File.h \

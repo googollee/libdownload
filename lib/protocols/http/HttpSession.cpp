@@ -24,7 +24,7 @@ HttpSession::HttpSession(HttpTask& task, size_t pos, long length)
     if (handle_ == NULL)
         throw DOWNLOADEXCEPTION(HttpTask::CURL_BAD_ALLOC, "CURL", task_.strerror(HttpTask::CURL_BAD_ALLOC));
 
-    CURLcode rete = curl_easy_setopt(handle_, CURLOPT_URL, task_.getUri());
+    CURLcode rete = curl_easy_setopt(handle_, CURLOPT_URL, task_.uri());
     CHECK_CURLE(rete);
 
     rete = curl_easy_setopt(handle_, CURLOPT_WRITEFUNCTION, &HttpSession::writeCallback);
@@ -61,7 +61,7 @@ void HttpSession::reset(size_t pos, int length)
 
     curl_easy_reset(handle_);
 
-    CURLcode rete = curl_easy_setopt(handle_, CURLOPT_URL, task_.getUri());
+    CURLcode rete = curl_easy_setopt(handle_, CURLOPT_URL, task_.uri());
     CHECK_CURLE(rete);
 
     rete = curl_easy_setopt(handle_, CURLOPT_WRITEFUNCTION, &HttpSession::writeCallback);
@@ -124,8 +124,11 @@ size_t HttpSession::writeCallback(void *buffer, size_t size, size_t nmemb, HttpS
 
     const ssize_t writed = ses->task_.writeFile(buffer, shouldWrite);
     if (writed == -1)
-        //TODO: need tell task.
-        printf("write fail\n");
+    {
+        //HttpTask should change state to error in writeFile if fail.
+        LOG(0, "write fail\n");
+        return 0;
+    }
 
     if (ses->length_ > 0)
     {
