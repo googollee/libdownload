@@ -2,12 +2,6 @@
 #include "HttpTask.h"
 #include "utility/Utility.h"
 
-#define CHECK_CURLE(rete)                                               \
-    {                                                                   \
-        if (rete != CURLE_OK)                                           \
-            throw DOWNLOADEXCEPTION(rete, "CURL", curl_easy_strerror(rete)); \
-    }
-
 HttpSession::HttpSession(HttpTask& task, size_t pos, long length)
     : task_(task),
       handle_(curl_easy_init()),
@@ -21,32 +15,16 @@ HttpSession::HttpSession(HttpTask& task, size_t pos, long length)
         task_.log(logBuffer);
     }
 
-    if (handle_ == NULL)
-        throw DOWNLOADEXCEPTION(HttpTask::CURL_BAD_ALLOC, "CURL", task_.strerror(HttpTask::CURL_BAD_ALLOC));
-
-    CURLcode rete = curl_easy_setopt(handle_, CURLOPT_URL, task_.uri());
-    CHECK_CURLE(rete);
-
-    rete = curl_easy_setopt(handle_, CURLOPT_WRITEFUNCTION, &HttpSession::writeCallback);
-    CHECK_CURLE(rete);
-
-    rete = curl_easy_setopt(handle_, CURLOPT_WRITEDATA, this);
-    CHECK_CURLE(rete);
-
-    rete = curl_easy_setopt(handle_, CURLOPT_PRIVATE, this);
-    CHECK_CURLE(rete);
-
     if (length == 0)
         throw DOWNLOADEXCEPTION(1, "HTTP", "length can't be 0.");
 
-    if (length != UNKNOWN_LEN)
+    if (handle_ == NULL)
     {
-        char range[128] = {0};
-        sprintf(range, "%lu-%lu", pos_, pos_ + length_ - 1);
-        printf("range: %s\n", range);
-        rete = curl_easy_setopt(handle_, CURLOPT_RANGE, range);
-        CHECK_CURLE(rete);
+        task_.setError(HttpTask::CURL_BAD_ALLOC);
+        return;
     }
+
+    initCurlHandle();
 }
 
 HttpSession::~HttpSession()
@@ -54,34 +32,18 @@ HttpSession::~HttpSession()
     curl_easy_cleanup(handle_);
 }
 
-void HttpSession::reset(size_t pos, int length)
-{
-    pos_ = pos;
-    length_ = length;
+// void HttpSession::reset(size_t pos, int length)
+// {
+//     if (length == 0)
+//         throw DOWNLOADEXCEPTION(1, "HTTP", "length can't be 0.");
 
-    curl_easy_reset(handle_);
+//     pos_ = pos;
+//     length_ = length;
 
-    CURLcode rete = curl_easy_setopt(handle_, CURLOPT_URL, task_.uri());
-    CHECK_CURLE(rete);
+//     curl_easy_reset(handle_);
 
-    rete = curl_easy_setopt(handle_, CURLOPT_WRITEFUNCTION, &HttpSession::writeCallback);
-    CHECK_CURLE(rete);
-
-    void* data = this;
-    rete = curl_easy_setopt(handle_, CURLOPT_WRITEDATA, data);
-    CHECK_CURLE(rete);
-
-    rete = curl_easy_setopt(handle_, CURLOPT_PRIVATE, this);
-    CHECK_CURLE(rete);
-
-    if (length != UNKNOWN_LEN)
-    {
-        char range[128] = {0};
-        sprintf(range, "%lu-%lu", pos_, length_);
-        rete = curl_easy_setopt(handle_, CURLOPT_RANGE, range);
-        CHECK_CURLE(rete);
-    }
-}
+//     initCurlHandle();
+// }
 
 bool HttpSession::checkFinish()
 {
@@ -100,9 +62,63 @@ long HttpSession::getResponseCode()
 {
     long ret = 0;
     CURLcode rete = curl_easy_getinfo(handle_, CURLINFO_RESPONSE_CODE, &ret);
-    CHECK_CURLE(rete);
+    if (rete != CURLE_OK)
+        throw DOWNLOADEXCEPTION(1, "CURL", curl_easy_strerror(rete));
 
     return ret;
+}
+
+bool HttpSession::initCurlHandle()
+{
+#define CHECK_CURLE(rete)                                               \
+    {                                                                   \
+        if (rete != CURLE_OK)                                           \
+        {                                                               \
+            task_.setError(HttpTask::OTHER, curl_easy_strerror(rete));  \
+            return false;                                               \
+        }                                                               \
+    }
+
+    CURLcode rete = curl_easy_setopt(handle_, CURLOPT_URL, task_.uri());
+    CHECK_CURLE(rete);
+
+    rete = curl_easy_setopt(handle_, CURLOPT_WRITEFUNCTION, &HttpSession::writeCallback);
+    CHECK_CURLE(rete);
+
+    rete = curl_easy_setopt(handle_, CURLOPT_WRITEDATA, this);
+    CHECK_CURLE(rete);
+
+    rete = curl_easy_setopt(handle_, CURLOPT_PRIVATE, this);
+    CHECK_CURLE(rete);
+
+    if (task_.configure().referer.length() != 0)
+    {
+        rete = curl_easy_setopt(handle_, CURLOPT_REFERER, task_.configure().referer.c_str());
+        CHECK_CURLE(rete);
+    }
+
+    if (task_.configure().userAgent.length() != 0)
+    {
+        rete = curl_easy_setopt(handle_, CURLOPT_USERAGENT, task_.configure().userAgent.c_str());
+        CHECK_CURLE(rete);
+    }
+
+    if (task_.configure().connectingTimeout > 0)
+    {
+        rete = curl_easy_setopt(handle_, CURLOPT_CONNECTTIMEOUT, task_.configure().connectingTimeout);
+        CHECK_CURLE(rete);
+    }
+
+    if (length_ != UNKNOWN_LEN)
+    {
+        char range[128] = {0};
+        sprintf(range, "%lu-%lu", pos_, pos_ + length_ - 1);
+        rete = curl_easy_setopt(handle_, CURLOPT_RANGE, range);
+        CHECK_CURLE(rete);
+    }
+
+    return true;
+#undef CHECK_CURLE
 }
 
 size_t HttpSession::writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession* ses)

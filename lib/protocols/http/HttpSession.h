@@ -11,7 +11,7 @@ public:
     HttpSession(HttpTask& task, size_t pos = 0, long length = UNKNOWN_LEN);
     ~HttpSession();
 
-    void reset(size_t pos, int length);
+//     void reset(size_t pos, int length);
     bool checkFinish();
     long getResponseCode();
 
@@ -23,6 +23,8 @@ public:
     void setLength(long length) { length_ = length; }
 
 private:
+    bool initCurlHandle();
+
     static size_t writeCallback(void *buffer, size_t size, size_t nmemb, HttpSession* ses);
 
     static const long UNKNOWN_LEN = -1;

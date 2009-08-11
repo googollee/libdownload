@@ -1,17 +1,18 @@
 #ifndef HTTP_TASK_HEADER
 #define HTTP_TASK_HEADER
 
+#include <vector>
+#include <string>
+
 #include "lib/utility/FileManager.h"
 
 #include "lib/protocols/TaskBase.h"
 #include "lib/protocols/ProtocolBase.h"
 
-#include "HttpSession.h"
 #include "BitMap.h"
 #include "HttpConfigure.h"
 
-#include <vector>
-#include <string>
+class HttpSession;
 
 class HttpTask : public TaskBase
 {
@@ -25,7 +26,7 @@ public:
         FAIL_OPEN_FILE,
         FAIL_FILE_IO,
         XML_PARSE_ERROR,
-        LAST_ERROR = XML_PARSE_ERROR,
+        OTHER,
     };
 
     HttpTask();
@@ -67,10 +68,11 @@ public:
 
     InternalState internalState();
     void setInternalState(InternalState state);
-    void setError(Error error);
+    void setError(Error error, const char* errstr = NULL);
 
     void initTask();
     void sessionFinish(HttpSession* ses);
+    const HttpConfigure& configure();
 
     void seekFile(size_t pos);
     ssize_t writeFile(void *buffer, size_t size);
@@ -90,6 +92,8 @@ private:
     BitMap downloadBitMap_;
     TaskState state_;
     ProtocolBase* base_;
+
+    HttpConfigure conf;
 
     Utility::FileManager file_;
     std::vector<HttpSession> sessions_;

@@ -11,6 +11,7 @@ using Utility::File;
 
 std::string testUri;
 HttpSession *ses = NULL;
+HttpConfigure conf;
 
 HttpTask::HttpTask() {}
 HttpTask::~HttpTask() {}
@@ -48,8 +49,15 @@ void HttpTask::setInternalState(InternalState state)
     s = state;
 }
 
-void HttpTask::setError(Error /*error*/)
-{}
+const HttpConfigure& HttpTask::configure()
+{
+    return conf;
+}
+
+void HttpTask::setError(Error /*error*/, const char* errstr)
+{
+    printf("error: %s\n", errstr);
+}
 
 std::string filename;
 
@@ -68,7 +76,7 @@ void HttpTask::initTask()
         s = HT_DOWNLOAD_WITHOUT_LENGTH;
 }
 
-void HttpTask::sessionFinish(HttpSession* ses)
+void HttpTask::sessionFinish(HttpSession* /*ses*/)
 {
 //     CURLcode rete = curl_easy_pause(ses->handle(), CURLPAUSE_ALL);
 //     CHECK_CURLE(rete);
