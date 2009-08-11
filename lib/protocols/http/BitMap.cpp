@@ -121,3 +121,8 @@ void BitMap::setRangeByLength(BitMap::size_type begin, BitMap::size_type end, Bi
     }
     setRange(begin / bytesPerBit_, end / bytesPerBit_, v);
 }
+
+std::vector<bool> BitMap::getVector()
+{
+    return map_;
+}

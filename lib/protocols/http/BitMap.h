@@ -53,6 +53,8 @@ public:
     size_type getPositionByLength(size_t len);
     void setRangeByLength(size_type begin, size_type end, value_type v);
 
+    std::vector<bool> getVector();
+
 private:
     std::vector<bool> map_;
     size_t len_;
