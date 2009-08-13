@@ -16,7 +16,9 @@ HttpConfigure conf;
 HttpTask::HttpTask() {}
 HttpTask::~HttpTask() {}
 const char* HttpTask::options() { return NULL; }
-void HttpTask::fdSet(fd_set* /*read*/, fd_set* /*write*/, fd_set* /*exc*/, int* /*max*/) {}
+bool HttpTask::fdSet(fd_set* /*read*/, fd_set* /*write*/, fd_set* /*exc*/, int* /*max*/) { return true; }
+bool HttpTask::start() { return false; }
+bool HttpTask::stop() { return false; }
 size_t HttpTask::performDownload() { return 0; }
 size_t HttpTask::performUpload() { return 0; }
 const char* HttpTask::strerror(int error) { error = error; return NULL; }
@@ -50,32 +52,32 @@ void HttpTask::initTask()
 
 void HttpTask::sessionFinish(HttpSession* /*ses*/)
 {
-//     CURLcode rete = curl_easy_pause(ses->handle(), CURLPAUSE_ALL);
-//     CHECK_CURLE(rete);
-
     internalState_ = HT_FINISH;
 
-    file_ .close();
+    file_.close();
 }
 
-void HttpTask::seekFile(size_t pos)
+bool HttpTask::seekFile(size_t pos)
 {
     if (!file_.seek(pos, File::SF_FromBegin))
     {
         internalState_ = HT_ERROR;
         printf("seek fail\n");
+        return false;
     }
+    return true;
 }
 
-ssize_t HttpTask::writeFile(void* buffer, size_t size)
+bool HttpTask::writeFile(void* buffer, size_t size)
 {
     ssize_t ret = file_.write(buffer, size);
     if (ret == -1)
     {
         internalState_ = HT_ERROR;
+        return false;
     }
 
-    return ret;
+    return true;
 }
 
 struct HttpTaskUnitTest

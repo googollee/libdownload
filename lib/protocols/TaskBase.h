@@ -7,20 +7,20 @@
 
 #include "utility/socket.h"
 
-enum TaskState
-{
-    TASK_WAIT,
-    TASK_DOWNLOAD,
-    TASK_UPLOAD,
-    TASK_FINISH,
-    TASK_ERROR,
-};
-
 class ProtocolBase;
 
 class TaskBase
 {
 public:
+    enum TaskState
+    {
+        TASK_WAIT,
+        TASK_DOWNLOAD,
+        TASK_UPLOAD,
+        TASK_FINISH,
+        TASK_ERROR,
+    };
+
     /**
      * \brief Callback when task download finish.
      *
@@ -97,7 +97,10 @@ public:
     virtual TaskState   state() = 0;
     virtual ProtocolBase* protocol() = 0;
 
-    virtual void fdSet(fd_set* read, fd_set* write, fd_set* exc, int* max) = 0;
+    virtual bool start() = 0;
+    virtual bool stop() = 0;
+
+    virtual bool fdSet(fd_set* read, fd_set* write, fd_set* exc, int* max) = 0;
     virtual size_t performDownload() = 0;
     virtual size_t performUpload() = 0;
 

@@ -16,7 +16,10 @@ HttpSession::HttpSession(HttpTask& task, size_t pos, long length)
     }
 
     if (length == 0)
-        throw DOWNLOADEXCEPTION(1, "HTTP", "length can't be 0.");
+    {
+        task_.setError(HttpTask::OTHER, "download length can't be 0.");
+        return;
+    }
 
     if (handle_ == NULL)
     {
@@ -35,7 +38,10 @@ HttpSession::~HttpSession()
 // void HttpSession::reset(size_t pos, int length)
 // {
 //     if (length == 0)
-//         throw DOWNLOADEXCEPTION(1, "HTTP", "length can't be 0.");
+//     {
+//         task_.setError(HttpTask::OTHER, "download length can't be 0.");
+//         return;
+//     }
 
 //     pos_ = pos;
 //     length_ = length;
@@ -63,7 +69,10 @@ long HttpSession::getResponseCode()
     long ret = 0;
     CURLcode rete = curl_easy_getinfo(handle_, CURLINFO_RESPONSE_CODE, &ret);
     if (rete != CURLE_OK)
-        throw DOWNLOADEXCEPTION(1, "CURL", curl_easy_strerror(rete));
+    {
+        task_.setError(HttpTask::OTHER, curl_easy_strerror(rete));
+        return -1;
+    }
 
     return ret;
 }
@@ -135,11 +144,14 @@ size_t HttpSession::writeCallback(void *buffer, size_t size, size_t nmemb, HttpS
         if (shouldWrite > ses->length_)
             shouldWrite = ses->length_;
 
-        ses->task_.seekFile(ses->pos_);
+        if (!ses->task_.seekFile(ses->pos_))
+        {
+            LOG(0, "seek fail\n");
+            return 0;
+        }
     }
 
-    const ssize_t writed = ses->task_.writeFile(buffer, shouldWrite);
-    if (writed == -1)
+    if (!ses->task_.writeFile(buffer, shouldWrite))
     {
         //HttpTask should change state to error in writeFile if fail.
         LOG(0, "write fail\n");
@@ -148,12 +160,12 @@ size_t HttpSession::writeCallback(void *buffer, size_t size, size_t nmemb, HttpS
 
     if (ses->length_ > 0)
     {
-        ses->length_ -= writed;
-        ses->pos_ += writed;
+        ses->length_ -= shouldWrite;
+        ses->pos_ += shouldWrite;
     }
 
     if (ses->checkFinish())
         ses->task_.sessionFinish(ses);
 
-    return (writed == shouldWrite) ? (size * nmemb) : writed;
+    return size * nmemb;
 }

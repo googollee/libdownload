@@ -99,6 +99,31 @@ HttpSession_unittest_LDADD = \
 	${BOOST_LDFLAGS} \
 	${BOOST_SIGNALS_LIB}
 
+TESTS += HttpTask_unittest
+check_PROGRAMS += HttpTask_unittest
+HttpTask_unittest_SOURCES = \
+	$(top_srcdir)/lib/utility/File.h \
+	$(top_srcdir)/lib/utility/FilePosixApi.h \
+	$(top_srcdir)/lib/utility/FileManager.h \
+	$(top_srcdir)/lib/protocols/TaskBase.h \
+	$(top_srcdir)/lib/protocols/TaskBase.cpp \
+	$(top_srcdir)/lib/protocols/http/BitMap.h \
+	$(top_srcdir)/lib/protocols/http/BitMap.cpp \
+	$(top_srcdir)/lib/protocols/http/HttpConfigure.h \
+	$(top_srcdir)/lib/protocols/http/HttpSession.h \
+	$(top_srcdir)/lib/protocols/http/HttpSession.cpp \
+	$(top_srcdir)/lib/protocols/http/HttpTask.h \
+	$(top_srcdir)/lib/protocols/http/HttpTask.cpp \
+	protocols/HttpTask_unittest.cpp
+HttpTask_unittest_CPPFLAGS = \
+	${LIBCURL_CPPFLAGS} \
+	${BOOST_CPPFLAGS}
+HttpTask_unittest_LDADD = \
+	gtest/lib/libgtest_main.la \
+	${LIBCURL_LIBS} \
+	${BOOST_LDFLAGS} \
+	${BOOST_SIGNALS_LIB}
+
 #TESTS += protocols/HttpProtocol_unittest.sh
 #check_PROGRAMS += HttpProtocol_unittest
 #HttpProtocol_unittest_SOURCES = \

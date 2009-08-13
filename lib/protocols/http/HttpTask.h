@@ -49,11 +49,14 @@ public:
     virtual TaskState   state()                { return state_; }
     virtual ProtocolBase *protocol()           { return protocol_; }
 
-    virtual void fdSet(fd_set* read, fd_set* write, fd_set* exc, int* max);
+    virtual bool start();
+    virtual bool stop();
+
+    virtual bool fdSet(fd_set* read, fd_set* write, fd_set* exc, int* max);
     virtual size_t performDownload();
     virtual size_t performUpload();
 
-    virtual int error()                        { return err; }
+    virtual int error()                        { return err_; }
     virtual const char* strerror(int error);
 
     enum InternalState
@@ -74,12 +77,15 @@ public:
     void sessionFinish(HttpSession* ses);
     const HttpConfigure& configure()           { return config_; }
 
-    void seekFile(size_t pos);
-    ssize_t writeFile(void *buffer, size_t size);
+    bool seekFile(size_t pos);
+    bool writeFile(void *buffer, size_t size);
 
 private:
     friend class HttpProtocol;
     friend struct HttpTaskUnitTest;
+
+    void hasSessionFinish();
+    bool checkFinish();
 
     std::string uri_;
     std::string outputDir_;
@@ -97,14 +103,18 @@ private:
     TaskState state_;
     ProtocolBase* protocol_;
 
-    Error err;
-    std::string errstr;
+    Error err_;
+    std::string errstr_;
 
     InternalState internalState_;
 
     CURLM* handle_;
     Utility::FileManager file_;
-    std::vector<HttpSession*> sessions_;
+    typedef std::vector<HttpSession*> Sessions;
+    Sessions sessions_;
+
+    size_t writeLength_;
+    int lastRunningHandle_;
 };
 
 #endif
