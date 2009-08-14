@@ -143,15 +143,9 @@ size_t HttpSession::writeCallback(void *buffer, size_t size, size_t nmemb, HttpS
         // got the file size from server.
         if (shouldWrite > ses->length_)
             shouldWrite = ses->length_;
-
-        if (!ses->task_.seekFile(ses->pos_))
-        {
-            LOG(0, "seek fail\n");
-            return 0;
-        }
     }
 
-    if (!ses->task_.writeFile(buffer, shouldWrite))
+    if (!ses->task_.writeFile(ses->pos_, buffer, shouldWrite))
     {
         //HttpTask should change state to error in writeFile if fail.
         LOG(0, "write fail\n");

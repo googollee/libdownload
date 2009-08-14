@@ -99,7 +99,7 @@ HttpSession_unittest_LDADD = \
 	${BOOST_LDFLAGS} \
 	${BOOST_SIGNALS_LIB}
 
-TESTS += HttpTask_unittest
+TESTS += protocols/HttpTask_unittest.sh
 check_PROGRAMS += HttpTask_unittest
 HttpTask_unittest_SOURCES = \
 	$(top_srcdir)/lib/utility/File.h \

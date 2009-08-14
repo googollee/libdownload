@@ -117,11 +117,15 @@ size_t HttpTask::performDownload()
     }
     lastRunningHandle_ = running;
 
+    clearSessions();
+
     return writeLength_;
 }
 
 size_t HttpTask::performUpload()
 {
+    clearSessions();
+
     return 0;
 }
 
@@ -204,17 +208,27 @@ void HttpTask::initTask()
             mimeType_ = std::string(contentType, split - contentType);
     }
 
+    validSource_ = totalSource_ = 1;
+
     if (length > 0)
     {
         ses->setLength(long(length));
         setInternalState(HT_DOWNLOAD);
         totalSize_ = size_t(length);
-        // TODO: seperate session here.
+        downloadBitmap_ = validBitmap_ = BitMap(totalSize_, config_.bytesPerBlock);
+        validBitmap_.setAll(true);
+        downloadBitmap_.setAll(false);
+
+        separateSession();
     }
     else
     {
         setInternalState(HT_DOWNLOAD_WITHOUT_LENGTH);
     }
+}
+
+void HttpTask::separateSession()
+{
 }
 
 void HttpTask::sessionFinish(HttpSession* ses)
@@ -226,13 +240,6 @@ void HttpTask::sessionFinish(HttpSession* ses)
         LOG(0, "can't paush easy handle: %s", curl_easy_strerror(rete));
     }
 
-    CURLMcode retm = curl_multi_remove_handle(handle_, ses->handle());
-    if (retm != CURLM_OK)
-    {
-        setError(HttpTask::OTHER, curl_multi_strerror(retm));
-        LOG(0, "can't remove easy handle: %s", curl_multi_strerror(retm));
-    }
-
     Sessions::iterator it = std::find(sessions_.begin(), sessions_.end(), ses);
     if (it == sessions_.end())
     {
@@ -240,7 +247,27 @@ void HttpTask::sessionFinish(HttpSession* ses)
         LOG(0, "can't find session: %p.", ses);
     }
     sessions_.erase(it);
-    delete ses;
+
+    finishedSessions_.push_back(ses);
+}
+
+void HttpTask::clearSessions()
+{
+    for (int i=0, n=finishedSessions_.size(); i<n; ++i)
+    {
+        HttpSession* ses = finishedSessions_[i];
+
+        CURLMcode retm = curl_multi_remove_handle(handle_, ses->handle());
+        if (retm != CURLM_OK)
+        {
+            setError(HttpTask::OTHER, curl_multi_strerror(retm));
+            LOG(0, "can't remove easy handle: %s", curl_multi_strerror(retm));
+        }
+
+        delete ses;
+    }
+
+    finishedSessions_.clear();
 
     if (checkFinish())
     {
@@ -249,24 +276,30 @@ void HttpTask::sessionFinish(HttpSession* ses)
     }
 }
 
-bool HttpTask::seekFile(size_t pos)
+bool HttpTask::writeFile(size_t pos, void *buffer, size_t size)
 {
-    if (!file_.seek(pos, Utility::FileManager::SF_FromBegin))
+    if (internalState_ == HT_DOWNLOAD)
     {
-        setError(FAIL_FILE_IO);
-        return false;
+        if (!file_.seek(pos, Utility::FileManager::SF_FromBegin))
+        {
+            setError(FAIL_FILE_IO);
+            return false;
+        }
     }
 
-    return true;
-}
-
-bool HttpTask::writeFile(void *buffer, size_t size)
-{
     ssize_t ret = file_.write(buffer, size);
     if (ret == -1)
     {
         setError(FAIL_FILE_IO);
         return false;
+    }
+
+    downloadSize_ += size;
+
+    if (internalState_ == HT_DOWNLOAD)
+    {
+        printf("write: %lu-%lu\n", pos, pos+size);
+        downloadBitmap_.setRangeByLength(pos, pos + size, true);
     }
 
     return true;

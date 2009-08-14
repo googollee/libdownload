@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include <string>
+#include <vector>
 
 struct HttpTaskUnitTest
 {
@@ -27,7 +28,7 @@ TEST(HttpTaskTest, Normal)
 {
     HttpTask task;
     HttpTaskUnitTest::setUri(task, "http://curl.haxx.se/libcurl/c/curl_easy_getinfo.html");
-    HttpTaskUnitTest::setOutput(task, "./", "test.data");
+    HttpTaskUnitTest::setOutput(task, "./", "normal.download");
 
     task.start();
 
@@ -35,6 +36,14 @@ TEST(HttpTaskTest, Normal)
             (task.state() != TaskBase::TASK_ERROR) )
     {
         int down = task.performDownload();
+        std::vector<bool> map = task.downloadBitmap();
+        for (int i=0, n=map.size(); i<n; ++i)
+        {
+            if (map[i])
+                printf("1");
+            else
+                printf("0");
+        }
         printf("download %d\r", down);
     }
 

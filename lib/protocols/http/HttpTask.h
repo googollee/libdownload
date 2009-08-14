@@ -77,15 +77,16 @@ public:
     void sessionFinish(HttpSession* ses);
     const HttpConfigure& configure()           { return config_; }
 
-    bool seekFile(size_t pos);
-    bool writeFile(void *buffer, size_t size);
+    bool writeFile(size_t pos, void *buffer, size_t size);
 
 private:
     friend class HttpProtocol;
     friend struct HttpTaskUnitTest;
 
+    void separateSession();
     void hasSessionFinish();
     bool checkFinish();
+    void clearSessions();
 
     std::string uri_;
     std::string outputDir_;
@@ -112,6 +113,7 @@ private:
     Utility::FileManager file_;
     typedef std::vector<HttpSession*> Sessions;
     Sessions sessions_;
+    Sessions finishedSessions_;
 
     size_t writeLength_;
     int lastRunningHandle_;

@@ -51,7 +51,7 @@ public:
     void setRange(size_type begin, size_type end, value_type v);
 
     size_type getPositionByLength(size_t len);
-    void setRangeByLength(size_type begin, size_type end, value_type v);
+    void setRangeByLength(size_t begin, size_t end, value_type v);
 
     std::vector<bool> getVector();
 

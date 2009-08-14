@@ -113,7 +113,7 @@ BitMap::size_type BitMap::getPositionByLength(size_t len)
     return len / bytesPerBit_;
 }
 
-void BitMap::setRangeByLength(BitMap::size_type begin, BitMap::size_type end, BitMap::value_type v)
+void BitMap::setRangeByLength(size_t begin, size_t end, BitMap::value_type v)
 {
     if (end >= len_)
     {

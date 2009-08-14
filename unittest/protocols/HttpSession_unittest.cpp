@@ -57,19 +57,16 @@ void HttpTask::sessionFinish(HttpSession* /*ses*/)
     file_.close();
 }
 
-bool HttpTask::seekFile(size_t pos)
+bool HttpTask::writeFile(size_t pos, void* buffer, size_t size)
 {
-    if (!file_.seek(pos, File::SF_FromBegin))
-    {
-        internalState_ = HT_ERROR;
-        printf("seek fail\n");
-        return false;
-    }
-    return true;
-}
+    if (pos != 0)
+        if (!file_.seek(pos, File::SF_FromBegin))
+        {
+            internalState_ = HT_ERROR;
+            printf("seek fail\n");
+            return false;
+        }
 
-bool HttpTask::writeFile(void* buffer, size_t size)
-{
     ssize_t ret = file_.write(buffer, size);
     if (ret == -1)
     {
