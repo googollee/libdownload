@@ -15,7 +15,7 @@ struct HttpConfigure
 
     HttpConfigure()
         : sessionNumber(5),
-          minSessionBlocks(100),
+          minSessionBlocks(20),
           bytesPerBlock(512),
           referer(""),
           userAgent(""),

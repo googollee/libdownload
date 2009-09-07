@@ -22,6 +22,7 @@ public:
         CURL_BAD_ALLOC,
         CURLM_BAD_ALLOC,
         NULL_INFO,
+        OUT_OF_MEMORY,
         BAD_FILE_LENGTH,
         FAIL_OPEN_FILE,
         FAIL_FILE_IO,

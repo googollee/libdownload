@@ -18,7 +18,7 @@ public:
     HttpTask& task() { return task_; }
     CURL* handle()   { return handle_; }
     size_t pos()     { return pos_; }
-    int length()     { return length_; }
+    long length()    { return length_; }
 
     void setLength(long length) { length_ = length; }
 

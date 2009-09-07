@@ -229,6 +229,64 @@ void HttpTask::initTask()
 
 void HttpTask::separateSession()
 {
+    while (int(sessions_.size()) < config_.sessionNumber)
+    {
+        int maxLength = 0;
+        for (int i=1, n=sessions_.size(); i<n; ++i)
+        {
+            if (sessions_[i]->length() > sessions_[maxLength]->length())
+                maxLength = i;
+        }
+
+        int splitNum = config_.sessionNumber - sessions_.size();
+        while ((splitNum * config_.minSessionBlocks * config_.bytesPerBlock)
+               > sessions_[maxLength]->length())
+            --splitNum;
+
+        if (splitNum <= 0)
+            return;
+
+        LOG(0, "will split to %d\n", splitNum);
+
+        long targetLen = sessions_[maxLength]->length() / (splitNum + 1);
+        size_t pos = sessions_[maxLength]->pos()
+            + (sessions_[maxLength]->length() - splitNum * targetLen);
+
+        for (int i=0; i<splitNum; ++i)
+        {
+            HttpSession* ses = new HttpSession(*this, pos, targetLen);
+            if (ses == NULL)
+            {
+                setError(OUT_OF_MEMORY, "alloc new sessions fail.");
+                for (int j=0; j<i; ++j)
+                {
+                    delete sessions_[maxLength + 1 + j];
+                    sessions_.erase(sessions_.begin() + maxLength + 1 + j);
+                }
+                return;
+            }
+
+            CURLMcode retm = curl_multi_add_handle(handle_, ses->handle());
+            if (retm != CURLM_OK)
+            {
+                delete ses;
+                setError(OTHER, curl_multi_strerror(retm));
+                LOG(0, "add easy handle to multi handle fail: %s.\n", curl_multi_strerror(retm));
+                for (int j=0; j<i; ++j)
+                {
+                    delete sessions_[maxLength + 1 + j];
+                    sessions_.erase(sessions_.begin() + maxLength + 1 + j);
+                }
+                return;
+            }
+
+            sessions_.insert(sessions_.begin() + maxLength + 1 + i, ses);
+
+            pos += targetLen;
+        }
+
+        sessions_[maxLength]->setLength(sessions_[maxLength]->length() - splitNum * targetLen);
+    }
 }
 
 void HttpTask::sessionFinish(HttpSession* ses)
