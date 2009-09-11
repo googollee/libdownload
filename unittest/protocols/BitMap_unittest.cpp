@@ -246,3 +246,34 @@ TEST(BitMapTest, TestSetLastBitByRange)
         EXPECT_EQ(map.get(i), true);
     }
 }
+
+TEST(BitMapTest, TestFindMaxEmpty)
+{
+    BitMap map(3000, 13);
+
+    map.setAll(false);
+    EXPECT_EQ(map.size(), 231u);
+
+    size_t pos;
+    size_t len;
+    map.findMaxEmpty(0, pos, len);
+    EXPECT_EQ(pos, 0);
+    EXPECT_EQ(len, 231u);
+
+    map.setRange(0, 10, true);
+    map.setRange(100, 200, true);
+
+    map.findMaxEmpty(0, pos, len);
+    EXPECT_EQ(pos, 10);
+    EXPECT_EQ(len, 90u);
+
+    map.findMaxEmpty(100, pos, len);
+    EXPECT_EQ(pos, 200);
+    EXPECT_EQ(len, 31u);
+
+    map.setRange(10, 90, true);
+
+    map.findMaxEmpty(0, pos, len);
+    EXPECT_EQ(pos, 200);
+    EXPECT_EQ(len, 31u);
+}

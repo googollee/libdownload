@@ -77,6 +77,23 @@ BitMap::size_type BitMap::find(bool v, BitMap::size_type pos)
     return pos;
 }
 
+void BitMap::findMaxEmpty(BitMap::size_type begin, BitMap::size_type& pos, BitMap::size_type& len)
+{
+    pos = size();
+    len = 0;
+
+    while ( (begin = find(false, begin)) < size() )
+    {
+        size_type end = find(true, begin);
+        if ( (end - begin) > len )
+        {
+            len = end - begin;
+            pos = begin;
+        }
+        begin = end;
+    }
+}
+
 BitMap::value_type BitMap::get(BitMap::size_type s)
 {
     return map_.at(s);

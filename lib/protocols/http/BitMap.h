@@ -45,6 +45,8 @@ public:
     size_t bytesPerBit();
 
     size_type find(bool v, size_type pos = 0);
+    void findMaxEmpty(size_type begin, size_type& pos, size_type& len);
+
     value_type get(size_type s);
     void set(size_type s, value_type v);
     void setAll(value_type v);
